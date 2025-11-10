@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useLocale } from '@/contexts/LocaleContext'
 import { Package, SelectedPackage } from '@/types'
 import { X, PackageOpen, Download } from 'lucide-react'
 
@@ -18,13 +19,15 @@ export function SelectionManager({
   onClearAll,
   onGenerateScript 
 }: SelectionManagerProps) {
+  const { t } = useLocale()
+
   if (selectedPackages.length === 0) {
     return (
       <Card className="w-full">
         <CardContent className="flex items-center justify-center h-32">
           <div className="text-center">
             <PackageOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">No packages selected</p>
+            <p className="text-muted-foreground">{t('selection.none')}</p>
           </div>
         </CardContent>
       </Card>
@@ -36,18 +39,18 @@ export function SelectionManager({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Selected Packages ({selectedPackages.length})</CardTitle>
+            <CardTitle>{t('selection.title')} ({selectedPackages.length})</CardTitle>
             <CardDescription>
-              These packages will be included in your installation script
+              {t('selection.description')}
             </CardDescription>
           </div>
           <div className="flex space-x-2">
             <Button variant="outline" size="sm" onClick={onClearAll}>
-              Clear All
+              {t('selection.clear_all')}
             </Button>
             <Button onClick={onGenerateScript}>
               <Download className="h-4 w-4 mr-2" />
-              Generate Script
+              {t('selection.generate_script')}
             </Button>
           </div>
         </div>
@@ -90,8 +93,7 @@ export function SelectionManager({
         </div>
         <div className="mt-4 p-3 bg-muted rounded-lg">
           <p className="text-sm text-muted-foreground">
-            <strong>Note:</strong> The generated script will use official repositories only 
-            and will be idempotent (safe to run multiple times).
+            <strong>Note:</strong> {t('selection.note')}
           </p>
         </div>
       </CardContent>

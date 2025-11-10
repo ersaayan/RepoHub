@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { mockPackages, categories, licenses } from '@/data/mockData'
+import { useLocale } from '@/contexts/LocaleContext'
 import { Package, FilterOptions, Platform } from '@/types'
 import { Search, Package as PackageIcon, Terminal, Monitor } from 'lucide-react'
 
@@ -22,6 +23,7 @@ export function PackageBrowser({
   onPackageToggle,
   onFiltersChange 
 }: PackageBrowserProps) {
+  const { t } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<FilterOptions>({
     platforms: [],
@@ -83,7 +85,7 @@ export function PackageBrowser({
     return (
       <Card className="w-full">
         <CardContent className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Please select a platform first</p>
+          <p className="text-muted-foreground">{t('platform.description')}</p>
         </CardContent>
       </Card>
     )
@@ -103,7 +105,7 @@ export function PackageBrowser({
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search packages..."
+                placeholder={t('packages.search')}
                 className="w-full pl-10 pr-4 py-2 border border-input rounded-md bg-background"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -115,7 +117,7 @@ export function PackageBrowser({
               handleFilterChange('categories', value ? [value] : [])
             }>
               <SelectTrigger>
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder={t('packages.filters.category')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map(category => (
@@ -131,11 +133,11 @@ export function PackageBrowser({
               handleFilterChange('types', value ? [value as 'gui' | 'cli'] : [])
             }>
               <SelectTrigger>
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder={t('packages.filters.type')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gui">GUI Applications</SelectItem>
-                <SelectItem value="cli">CLI Tools</SelectItem>
+                <SelectItem value="gui">{t('packages.filters.gui')}</SelectItem>
+                <SelectItem value="cli">{t('packages.filters.cli')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -144,11 +146,11 @@ export function PackageBrowser({
               handleFilterChange('repositories', value ? [value as 'official' | 'third-party'] : [])
             }>
               <SelectTrigger>
-                <SelectValue placeholder="Repository" />
+                <SelectValue placeholder={t('packages.filters.repository')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="official">Official Only</SelectItem>
-                <SelectItem value="third-party">Third Party</SelectItem>
+                <SelectItem value="official">{t('packages.filters.official')}</SelectItem>
+                <SelectItem value="third_party">{t('packages.filters.third_party')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -158,9 +160,9 @@ export function PackageBrowser({
       {/* Package List */}
       <Card>
         <CardHeader>
-          <CardTitle>Available Packages ({filteredPackages.length})</CardTitle>
+          <CardTitle>{t('packages.browse')} ({filteredPackages.length})</CardTitle>
           <CardDescription>
-            Select packages to include in your installation script
+            {t('packages.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -219,7 +221,7 @@ export function PackageBrowser({
             {filteredPackages.length === 0 && (
               <div className="text-center py-8">
                 <PackageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No packages found matching your criteria</p>
+                <p className="text-muted-foreground">{t('packages.no_packages')}</p>
               </div>
             )}
           </div>

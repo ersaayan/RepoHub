@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { platforms } from '@/data/mockData'
+import { useLocale } from '@/contexts/LocaleContext'
 import { Platform } from '@/types'
 
 interface PlatformSelectorProps {
@@ -12,35 +13,37 @@ interface PlatformSelectorProps {
 }
 
 export function PlatformSelector({ selectedPlatform, onPlatformSelect }: PlatformSelectorProps) {
+  const { t } = useLocale()
+
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Select Your Platform</CardTitle>
-        <CardDescription>
-          Choose your operating system and package manager to browse available packages
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">{t('platform.select')}</CardTitle>
+        <CardDescription className="text-sm">
+          {t('platform.description')}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {platforms.map((platform) => (
             <Button
               key={platform.id}
               variant={selectedPlatform?.id === platform.id ? "default" : "outline"}
-              className="h-auto p-4 flex flex-col items-center space-y-2"
+              className="h-auto p-3 flex flex-col items-center space-y-1"
               onClick={() => onPlatformSelect(platform)}
             >
-              <div className="text-2xl">{platform.icon}</div>
+              <div className="text-xl">{platform.icon}</div>
               <div className="text-center">
-                <div className="font-semibold">{platform.name}</div>
-                <div className="text-sm text-muted-foreground">{platform.packageManager}</div>
+                <div className="font-semibold text-sm">{platform.name}</div>
+                <div className="text-xs text-muted-foreground">{platform.packageManager}</div>
               </div>
             </Button>
           ))}
         </div>
         {selectedPlatform && (
-          <div className="mt-4 p-4 bg-secondary rounded-md">
-            <p className="text-sm">
-              <strong>Selected:</strong> {selectedPlatform.name} ({selectedPlatform.packageManager})
+          <div className="mt-3 p-3 bg-secondary rounded-md">
+            <p className="text-xs">
+              <strong>{t('platform.selected')}:</strong> {selectedPlatform.name} ({selectedPlatform.packageManager})
             </p>
           </div>
         )}

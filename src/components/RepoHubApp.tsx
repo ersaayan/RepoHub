@@ -1,14 +1,18 @@
 "use client"
 
 import { useState } from 'react'
+import { LocaleProvider } from '@/contexts/LocaleContext'
+import { Header } from '@/components/Header'
 import { PlatformSelector } from '@/components/PlatformSelector'
 import { PackageBrowser } from '@/components/PackageBrowser'
 import { SelectionManager } from '@/components/SelectionManager'
 import { ScriptPreview } from '@/components/ScriptPreview'
 import { generateScript } from '@/lib/scriptGenerator'
+import { useLocale } from '@/contexts/LocaleContext'
 import { Platform, Package, SelectedPackage, FilterOptions, GeneratedScript } from '@/types'
 
-export function RepoHubApp() {
+function RepoHubAppContent() {
+  const { t, locale } = useLocale()
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
   const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([])
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null)
@@ -56,18 +60,20 @@ export function RepoHubApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div key={locale} className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <Header />
+      
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             RepoHub
           </h1>
-          <p className="text-xl text-gray-600 mb-2">
-            Cross-Platform Package Manager
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-2">
+            {t('common.subtitle')}
           </p>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            Simplify software installation across Linux, Windows, and macOS with official repositories
+          <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+            {t('common.description')}
           </p>
         </div>
 
@@ -107,5 +113,13 @@ export function RepoHubApp() {
         )}
       </div>
     </div>
+  )
+}
+
+export function RepoHubApp() {
+  return (
+    <LocaleProvider>
+      <RepoHubAppContent />
+    </LocaleProvider>
   )
 }
