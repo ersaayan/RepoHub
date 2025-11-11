@@ -15,7 +15,8 @@ const translations = {
     platform: {
       select: "Select Your Platform",
       description: "Choose your operating system and package manager to browse available packages",
-      selected: "Selected"
+      selected: "Selected",
+      please_select: "Please select a platform first"
     },
     packages: {
       title: "Available Packages",
@@ -23,6 +24,7 @@ const translations = {
       description: "Select packages to include in your installation script",
       search: "Search packages...",
       no_packages: "No packages found matching your criteria",
+      count_label: "({current} of {total} packages for {platform})",
       filters: {
         category: "Category",
         type: "Type",
@@ -116,7 +118,8 @@ const translations = {
     platform: {
       select: "Platformunuzu Seçin",
       description: "Mevcut paketlere göz atmak için işletim sisteminizi ve paket yöneticinizi seçin",
-      selected: "Seçildi"
+      selected: "Seçildi",
+      please_select: "Lütfen önce bir platform seçin"
     },
     packages: {
       title: "Mevcut Paketler",
@@ -124,6 +127,7 @@ const translations = {
       description: "Kurulum scriptinize dahil edilecek paketleri seçin",
       search: "Paket ara...",
       no_packages: "Kriterlerinize uyan paket bulunamadı",
+      count_label: "({platform} için {current} / {total} paket)",
       filters: {
         category: "Kategori",
         type: "Tür",
@@ -213,7 +217,7 @@ interface LocaleContextType {
   locale: Locale
   changeLocale: (locale: Locale) => void
   toggleLocale: () => void
-  t: (key: string) => string
+  t: (key: string, params?: Record<string, string | number>) => string
 }
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined)
@@ -250,15 +254,19 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     changeLocale(locale === 'en' ? 'tr' : 'en')
   }
 
-  const t = (key: string) => {
+  const t = (key: string, params?: Record<string, string | number>) => {
     const keys = key.split('.')
     let value: any = translations[locale]
     
     for (const k of keys) {
       value = value?.[k]
     }
-    
-    return value || key
+    if (typeof value === 'string' && params) {
+      return value.replace(/\{(\w+)\}/g, (_, k) =>
+        Object.prototype.hasOwnProperty.call(params, k) ? String(params[k]) : `{${k}}`
+      )
+    }
+    return (typeof value === 'string') ? value : key
   }
 
   return (

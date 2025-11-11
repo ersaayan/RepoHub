@@ -16,6 +16,16 @@ export function PlatformSelector({ selectedPlatform, onPlatformSelect }: Platfor
   const { t } = useLocale()
   const [platforms, setPlatforms] = useState<Platform[]>([])
   const [loading, setLoading] = useState(true)
+  
+  const iconSlug: Record<string, string> = {
+    debian: 'debian',
+    ubuntu: 'ubuntu',
+    fedora: 'fedora',
+    arch: 'archlinux',
+    windows: 'windows',
+    macos: 'apple'
+  }
+  const iconBase = (slug: string) => `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`
 
   useEffect(() => {
     const loadPlatforms = async () => {
@@ -62,29 +72,37 @@ export function PlatformSelector({ selectedPlatform, onPlatformSelect }: Platfor
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
           {platforms.map((platform) => (
             <Button
               key={platform.id}
-              variant={selectedPlatform?.id === platform.id ? "default" : "outline"}
-              className="h-auto p-3 flex flex-col items-center space-y-1"
+              variant="outline"
+              className={`h-12 px-2 py-1 flex flex-col items-center justify-center gap-1 rounded-md border transition-colors
+                ${selectedPlatform?.id === platform.id 
+                  ? 'border-primary ring-2 ring-primary/60 bg-primary/5' 
+                  : 'border-border hover:bg-secondary/60'}`}
               onClick={() => onPlatformSelect(platform)}
             >
-              <div className="text-xl">{platform.icon}</div>
+              <div
+                className={`h-5 w-5 ${selectedPlatform?.id === platform.id ? 'text-foreground' : 'text-muted-foreground'}`}
+                style={{
+                  WebkitMaskImage: `url(${iconBase(iconSlug[platform.id] || 'linux')})`,
+                  maskImage: `url(${iconBase(iconSlug[platform.id] || 'linux')})`,
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  backgroundColor: 'currentColor'
+                } as React.CSSProperties}
+              />
               <div className="text-center">
-                <div className="font-semibold text-sm">{platform.name}</div>
-                <div className="text-xs text-muted-foreground">{platform.packageManager}</div>
+                <div className="font-medium text-xs leading-tight truncate max-w-[90px]">{platform.name}</div>
               </div>
             </Button>
           ))}
         </div>
-        {selectedPlatform && (
-          <div className="mt-3 p-3 bg-secondary rounded-md">
-            <p className="text-xs">
-              <strong>{t('platform.selected')}:</strong> {selectedPlatform.name} ({selectedPlatform.packageManager})
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   )

@@ -205,7 +205,7 @@ export function PackageBrowserV2({
         </CardHeader>
         <CardContent className="pt-0">
           <div className="text-center py-8 text-muted-foreground">
-            Please select a platform first
+            {t('platform.please_select')}
           </div>
         </CardContent>
       </Card>
@@ -219,7 +219,7 @@ export function PackageBrowserV2({
           <PackageIcon className="h-5 w-5" />
           {t('packages.title')}
           <span className="text-sm font-normal text-muted-foreground">
-            ({packages.length} of {totalCount} packages for {selectedPlatform?.name || 'Unknown Platform'})
+            {t('packages.count_label', { current: packages.length, total: totalCount, platform: selectedPlatform?.name || 'Unknown Platform' })}
           </span>
         </CardTitle>
         <CardDescription className="text-sm">
