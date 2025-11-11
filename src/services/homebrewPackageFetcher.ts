@@ -153,7 +153,7 @@ export class HomebrewPackageFetcher {
             await query(
               `UPDATE packages 
                SET version = $1, description = $2, updated_at = NOW()
-               WHERE id = $4`,
+               WHERE id = $3`,
               [pkg.version, pkg.description, existingResult.rows[0].id]
             )
             updated++

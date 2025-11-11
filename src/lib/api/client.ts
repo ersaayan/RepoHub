@@ -1,6 +1,8 @@
 import { Platform, Package, FilterOptions } from '@/types'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api'
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== '')
+  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
+  : '/api'
 
 class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
