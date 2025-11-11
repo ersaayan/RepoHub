@@ -30,23 +30,24 @@ export class DebianPackageFetcher {
       const buffer = await response.arrayBuffer()
       const compressed = new Uint8Array(buffer)
       
-      // Decompress using Node.js zlib with proper error handling
-      const { gunzip } = await import('zlib')
-      const decompressed = await new Promise<Buffer>((resolve, reject) => {
-        gunzip(compressed, { 
-          finishFlush: 1, // Z_SYNC_FLUSH
-          windowBits: 15 + 16 // Enable gzip header decoding
-        }, (err, result) => {
-          if (err) {
-            console.error('Gunzip error:', err)
-            reject(err)
-          } else {
-            resolve(result)
-          }
+      // Decompress if input is gzipped (magic 0x1f 0x8b); otherwise treat as plain text
+      let text: string
+      if (compressed.length >= 2 && compressed[0] === 0x1f && compressed[1] === 0x8b) {
+        const { gunzip } = await import('zlib')
+        const decompressed = await new Promise<Buffer>((resolve, reject) => {
+          gunzip(compressed, (err, result) => {
+            if (err) {
+              console.error('Gunzip error:', err)
+              reject(err)
+            } else {
+              resolve(result)
+            }
+          })
         })
-      })
-
-      const text = decompressed.toString('utf-8')
+        text = decompressed.toString('utf-8')
+      } else {
+        text = Buffer.from(compressed).toString('utf-8')
+      }
       const packages = this.parseDebianPackageList(text)
       
       console.log(`📊 Parsed ${packages.length} Debian packages`)
@@ -76,23 +77,24 @@ export class DebianPackageFetcher {
       const buffer = await response.arrayBuffer()
       const compressed = new Uint8Array(buffer)
       
-      // Decompress using Node.js zlib with proper error handling
-      const { gunzip } = await import('zlib')
-      const decompressed = await new Promise<Buffer>((resolve, reject) => {
-        gunzip(compressed, { 
-          finishFlush: 1, // Z_SYNC_FLUSH
-          windowBits: 15 + 16 // Enable gzip header decoding
-        }, (err, result) => {
-          if (err) {
-            console.error('Gunzip error:', err)
-            reject(err)
-          } else {
-            resolve(result)
-          }
+      // Decompress if input is gzipped (magic 0x1f 0x8b); otherwise treat as plain text
+      let text: string
+      if (compressed.length >= 2 && compressed[0] === 0x1f && compressed[1] === 0x8b) {
+        const { gunzip } = await import('zlib')
+        const decompressed = await new Promise<Buffer>((resolve, reject) => {
+          gunzip(compressed, (err, result) => {
+            if (err) {
+              console.error('Gunzip error:', err)
+              reject(err)
+            } else {
+              resolve(result)
+            }
+          })
         })
-      })
-
-      const text = decompressed.toString('utf-8')
+        text = decompressed.toString('utf-8')
+      } else {
+        text = Buffer.from(compressed).toString('utf-8')
+      }
       const packages = this.parseUbuntuPackageList(text)
       
       console.log(`📊 Parsed ${packages.length} Ubuntu packages`)
