@@ -9,6 +9,7 @@ export class WingetPackageFetcher {
   private githubToken = process.env.GITHUB_TOKEN || ''
   private requestCount = 0
   private startTime = Date.now()
+  private rlStrict = process.env.GITHUB_RL_STRICT === 'true'
   
   /**
    * Fetch all Winget packages by scraping GitHub repo structure
@@ -29,7 +30,7 @@ export class WingetPackageFetcher {
       console.log(`⚠️  No GitHub token - limited to ${rateLimit} req/hour`)
       console.log('   Add GITHUB_TOKEN to .env for higher limits')
     }
-    
+
     const allPackages: WingetPackage[] = []
     const packageSet = new Set<string>()
     
@@ -45,49 +46,15 @@ export class WingetPackageFetcher {
         console.log(`📁 Processing folder: ${letter} (${i + 1}/${folders.length})`)
         
         try {
-          // Fetch folder listing from GitHub
           const url = `https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/${letter}`
-          const headers: HeadersInit = {}
-          
-          if (this.githubToken) {
-            headers['Authorization'] = `Bearer ${this.githubToken}`
-          }
-          
-          const response = await fetch(url, { headers })
-          this.requestCount++
-          
-          if (!response.ok) {
-            console.error(`  ❌ Failed to fetch ${letter}: ${response.status}`)
-            
-            // If rate limited, wait and retry
-            if (response.status === 403) {
-              console.log('  ⏳ Rate limit hit, waiting 60 seconds...')
-              await new Promise(resolve => setTimeout(resolve, 60000))
-              continue
-            }
-            continue
-          }
-          
-          const publishers = await response.json()
+          const publishers = await this.githubFetch(url)
           console.log(`  Found ${publishers.length} publishers`)
           
           for (const publisher of publishers) {
             if (publisher.type !== 'dir') continue
             
             try {
-              // Get packages for this publisher
-              const pkgResponse = await fetch(publisher.url, { headers })
-              this.requestCount++
-              
-              if (!pkgResponse.ok) {
-                if (pkgResponse.status === 403) {
-                  console.log('  ⏳ Rate limit hit, waiting 60 seconds...')
-                  await new Promise(resolve => setTimeout(resolve, 60000))
-                }
-                continue
-              }
-              
-              const packages = await pkgResponse.json()
+              const packages = await this.githubFetch(publisher.url)
               
               for (const pkg of packages) {
                 if (pkg.type !== 'dir') continue
@@ -164,6 +131,62 @@ export class WingetPackageFetcher {
       // Small base delay
       await new Promise(resolve => setTimeout(resolve, 100))
     }
+  }
+
+  // Header-aware rate limit helpers
+  private async sleep(ms: number): Promise<void> {
+    if (ms > 0) {
+      await new Promise(r => setTimeout(r, ms))
+    }
+  }
+
+  private async waitUntilReset(resetEpochSeconds: number | undefined): Promise<void> {
+    const now = Date.now()
+    const resetMs = resetEpochSeconds ? resetEpochSeconds * 1000 : 0
+    let waitMs = 0
+    if (resetMs > now) {
+      waitMs = resetMs - now + 2000 // small buffer
+    } else {
+      // Fallback if header missing
+      waitMs = this.githubToken ? 60 * 60 * 1000 : 60 * 1000
+    }
+    await this.sleep(waitMs)
+  }
+
+  private async githubFetch(url: string, retries = 3): Promise<any> {
+    const headers: HeadersInit = {}
+    if (this.githubToken) headers['Authorization'] = `Bearer ${this.githubToken}`
+
+    const res = await fetch(url, { headers })
+    this.requestCount++
+
+    const remainingRaw = res.headers.get('x-ratelimit-remaining') || ''
+    const limitRaw = res.headers.get('x-ratelimit-limit') || ''
+    const resetRaw = res.headers.get('x-ratelimit-reset') || ''
+    const remaining = parseInt(remainingRaw, 10)
+    const limit = parseInt(limitRaw, 10)
+    const reset = parseInt(resetRaw, 10)
+
+    if (res.status === 403 || (Number.isFinite(remaining) && remaining <= 0)) {
+      await this.waitUntilReset(Number.isFinite(reset) ? reset : undefined)
+      if (retries > 0) {
+        return this.githubFetch(url, retries - 1)
+      }
+      throw new Error('GitHub rate limit reached')
+    }
+
+    if (this.rlStrict && Number.isFinite(limit) && Number.isFinite(remaining) && limit > 0) {
+      const fraction = remaining / limit
+      if (fraction <= 0.2) {
+        await this.waitUntilReset(Number.isFinite(reset) ? reset : undefined)
+      }
+    }
+
+    if (!res.ok) {
+      throw new Error(`GitHub request failed: ${res.status}`)
+    }
+
+    return res.json()
   }
   
   /**
