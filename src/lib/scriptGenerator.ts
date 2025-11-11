@@ -132,13 +132,13 @@ echo "Installation completed!"`
 }
 
 function generateWindowsScript(packages: SelectedPackage[]): string {
-  const packageNames = packages.map(p => p.id).join(' ')
+  const packageNames = packages.map(p => p.name).join(' ')
   
   return `# RepoHub Installation Script for Windows
 # Generated on ${new Date().toISOString()}
 # This script is idempotent and safe to run multiple times
 
-Write-Host "Starting package installation for Windows..."
+Write-Host 'Starting package installation for Windows...'
 
 # Try to unblock this script (no-op if not needed)
 try { Unblock-File -Path $MyInvocation.MyCommand.Path -ErrorAction SilentlyContinue } catch {}
@@ -151,9 +151,9 @@ if (-not $isAdmin) {
 
 # Ensure winget is available
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    Write-Warning "Windows Package Manager (winget) is not installed."
+    Write-Warning 'Windows Package Manager (winget) is not installed.'
     Write-Host "We'll open the Microsoft Store page for 'App Installer' (includes winget)."
-    Write-Host "After installation completes, please re-run this script."
+    Write-Host 'After installation completes, please re-run this script.'
     try {
         Start-Process "ms-windows-store://pdp/?productId=9NBLGGH4NNS1"
     } catch {
@@ -163,21 +163,25 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 }
 
 # Install packages using winget
-Write-Host "Installing packages: ${packageNames}"
+Write-Host 'Installing packages: ${packageNames}'
 
-$packages = @(${packages.map(p => `'${p.id}'`).join(', ')})
+$packages = @(${packages.map(p => `'${p.name}'`).join(', ')})
 
 foreach ($package in $packages) {
     Write-Host "Installing $package..."
     try {
         winget install --id $package --accept-package-agreements --accept-source-agreements -e
-        Write-Host "✓ $package installed successfully"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[ERROR] $package installation failed with exit code $LASTEXITCODE"
+        } else {
+            Write-Host "[OK] $package installed successfully"
+        }
     } catch {
-        Write-Host "✗ $package installation failed: $_"
+        Write-Host "[ERROR] $package installation failed: $_"
     }
 }
 
-Write-Host "Installation completed!"`
+Write-Host 'Installation completed!'`
 }
 
 function generateMacOSScript(packages: SelectedPackage[]): string {

@@ -17,6 +17,7 @@ export interface Package {
   platform?: string | Platform
   platform_id?: string
   repository: 'official' | 'third-party'
+  download_url?: string
   lastUpdated?: string
   downloads?: number
   popularity?: number

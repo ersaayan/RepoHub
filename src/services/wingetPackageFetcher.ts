@@ -97,7 +97,7 @@ export class WingetPackageFetcher {
                 if (!packageSet.has(identifier)) {
                   packageSet.add(identifier)
                   allPackages.push({
-                    name: pkg.name,
+                    name: identifier,
                     publisher: publisher.name,
                     version: 'latest',
                     description: `${pkg.name} by ${publisher.name}`
