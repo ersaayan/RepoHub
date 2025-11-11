@@ -4,8 +4,17 @@ import { DebianPackageFetcher } from '@/services/debianPackageFetcher'
 import { PackageFetcherV2 } from '@/services/packageFetcherV2'
 import { SimplePackageFetcher } from '@/services/simplePackageFetcher'
 import { PlatformInitializer } from '@/services/platformInitializer'
+import { SyncAuth } from '@/lib/sync/auth'
 
 export async function POST(request: NextRequest) {
+  // Check if sync is allowed
+  const authResult = await SyncAuth.isSyncAllowed(request)
+  if (!authResult.allowed) {
+    return NextResponse.json(
+      { error: 'Sync operation not allowed', reason: authResult.reason },
+      { status: 403 }
+    )
+  }
   try {
     const body = await request.json()
     const { platform_id, all_platforms, source } = body
@@ -107,11 +116,16 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // Return sync status (would need to implement status tracking)
+    // Return sync status with configuration info
     return NextResponse.json({
       status: 'ready',
       last_sync: null,
-      platforms: ['ubuntu', 'fedora', 'arch', 'windows', 'macos']
+      platforms: ['ubuntu', 'fedora', 'arch', 'windows', 'macos'],
+      sync_config: {
+        server_only: process.env.SYNC_SERVER_ONLY === 'true',
+        auto_sync_enabled: SyncAuth.isAutoSyncEnabled(),
+        auto_sync_days: SyncAuth.getAutoSyncDays()
+      }
     })
   } catch (error) {
     console.error('Error getting sync status:', error)

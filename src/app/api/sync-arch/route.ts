@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { ArchPackageFetcher } from '@/services/archPackageFetcher'
+import { SyncAuth } from '@/lib/sync/auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes timeout
@@ -19,7 +20,16 @@ export async function GET() {
   return NextResponse.json(syncStatus)
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Check if sync is allowed
+  const authResult = await SyncAuth.isSyncAllowed(request)
+  if (!authResult.allowed) {
+    return NextResponse.json(
+      { error: 'Sync operation not allowed', reason: authResult.reason },
+      { status: 403 }
+    )
+  }
+
   if (syncInProgress) {
     return NextResponse.json(
       { error: 'Sync already in progress' },
