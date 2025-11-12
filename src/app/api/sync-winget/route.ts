@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WingetPackageFetcher } from '@/services/wingetPackageFetcher'
+import { query } from '@/lib/database/config'
 import { SyncAuth } from '@/lib/sync/auth'
 
 export const dynamic = 'force-dynamic'
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
   // Start sync in background
   ;(async () => {
     try {
+      const runStartedAt = new Date()
       const fetcher = new WingetPackageFetcher()
       
       // Fetch packages
@@ -76,6 +78,30 @@ export async function POST(request: NextRequest) {
           syncStatus.storeTotal = total
         }
       )
+      // Prune not-seen Winget packages (platform windows, repository IS NULL)
+      const graceDays = parseInt(process.env.PRUNE_GRACE_DAYS || '0', 10)
+      const cutoff = new Date(runStartedAt.getTime() - (graceDays > 0 ? graceDays : 0) * 24 * 60 * 60 * 1000)
+      await query(
+        `UPDATE packages
+         SET is_active = false
+         WHERE platform_id = $1
+           AND repository IS NULL
+           AND is_active = true
+           AND (last_seen_at IS NULL OR last_seen_at < $2)`,
+        ['windows', cutoff]
+      )
+      const hardDays = parseInt(process.env.PRUNE_HARD_DELETE_DAYS || '0', 10)
+      if (hardDays > 0) {
+        const deleteCutoff = new Date(runStartedAt.getTime() - hardDays * 24 * 60 * 60 * 1000)
+        await query(
+          `DELETE FROM packages
+           WHERE platform_id = $1
+             AND repository IS NULL
+             AND is_active = false
+             AND last_seen_at IS NOT NULL AND last_seen_at < $2`,
+          ['windows', deleteCutoff]
+        )
+      }
       
       syncStatus.status = 'complete'
       console.log('✅ Winget sync completed successfully')

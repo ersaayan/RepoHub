@@ -143,8 +143,8 @@ export class HomebrewPackageFetcher {
           if (existingResult.rows.length === 0) {
             // Insert new package
             await query(
-              `INSERT INTO packages (id, name, description, version, platform_id, type, repository, popularity_score, is_active)
-               VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8)`,
+              `INSERT INTO packages (id, name, description, version, platform_id, type, repository, popularity_score, is_active, last_seen_at)
+               VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
               [pkg.name, pkg.description, pkg.version, 'macos', null, null, 0, true]
             )
             stored++
@@ -152,12 +152,17 @@ export class HomebrewPackageFetcher {
             // Update if version changed
             await query(
               `UPDATE packages 
-               SET version = $1, description = $2, updated_at = NOW()
+               SET version = $1, description = $2, last_seen_at = NOW(), is_active = true, updated_at = NOW()
                WHERE id = $3`,
               [pkg.version, pkg.description, existingResult.rows[0].id]
             )
             updated++
           } else {
+            // Still mark as seen to avoid pruning
+            await query(
+              `UPDATE packages SET last_seen_at = NOW(), is_active = true WHERE id = $1`,
+              [existingResult.rows[0].id]
+            )
             skipped++
           }
           

@@ -190,18 +190,23 @@ export class AurPackageFetcher {
           )
           if (existing.rows.length === 0) {
             await query(
-              `INSERT INTO packages (id, name, description, version, platform_id, type, repository, popularity_score, is_active)
-               VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8)`,
+              `INSERT INTO packages (id, name, description, version, platform_id, type, repository, popularity_score, is_active, last_seen_at)
+               VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
               [pkg.name, pkg.description, pkg.version, 'arch', null, 'aur', 0, true]
             )
             stored++
           } else if (existing.rows[0].version !== pkg.version) {
             await query(
-              `UPDATE packages SET version = $1, description = $2, repository = $3, updated_at = NOW() WHERE id = $4`,
+              `UPDATE packages SET version = $1, description = $2, repository = $3, last_seen_at = NOW(), is_active = true, updated_at = NOW() WHERE id = $4`,
               [pkg.version, pkg.description, 'aur', existing.rows[0].id]
             )
             updated++
           } else {
+            // Still mark as seen to avoid pruning
+            await query(
+              `UPDATE packages SET last_seen_at = NOW(), is_active = true WHERE id = $1`,
+              [existing.rows[0].id]
+            )
             skipped++
           }
           if (onProgress && (stored + updated + skipped) % 100 === 0) {

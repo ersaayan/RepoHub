@@ -210,8 +210,8 @@ export class PackageService {
       `INSERT INTO packages (
         id, name, description, version, platform_id, category_id, 
         license_id, type, repository, homepage_url, download_url, 
-        popularity_score
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+        popularity_score, last_seen_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()) 
       RETURNING *`,
       [id, name, description, version, platform_id, category_id, 
        license_id, type, repository, homepage_url, download_url, 
@@ -237,6 +237,11 @@ export class PackageService {
         values.push(value)
       }
     }
+
+    // Always mark as seen and active on update
+    fields.push('last_seen_at = NOW()')
+    fields.push('is_active = true')
+    fields.push('updated_at = NOW()')
 
     if (fields.length === 0) {
       return this.getById(id)
