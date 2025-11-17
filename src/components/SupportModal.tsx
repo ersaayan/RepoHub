@@ -17,18 +17,32 @@ interface SupportModalProps {
 export function SupportModal({ isOpen, onClose }: SupportModalProps) {
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('USDT')
-  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { t } = useLocale()
 
   const cryptoOptions = [
-    { value: 'USDT', label: 'USDT (TRC20)', network: 'TRC20' },
-    { value: 'USDC', label: 'USDC (TRC20)', network: 'TRC20' },
-    { value: 'BTC', label: 'Bitcoin', network: 'BTC' },
-    { value: 'ETH', label: 'Ethereum', network: 'ETH' },
-    { value: 'LTC', label: 'Litecoin', network: 'LTC' },
-    { value: 'TRX', label: 'TRON', network: 'TRC20' }
+    // Popular cryptocurrencies
+    { value: 'BTC', label: 'Bitcoin (BTC)', network: 'BTC' },
+    { value: 'ETH', label: 'Ethereum (ETH)', network: 'ETH' },
+    { value: 'XMR', label: 'Monero (XMR)', network: 'XMR' },
+    { value: 'SOL', label: 'Solana (SOL)', network: 'SOL' },
+    { value: 'BNB', label: 'Binance Coin (BNB)', network: 'BSC' },
+    
+    // Stablecoins
+    { value: 'USDT', label: 'Tether (USDT)', network: 'TRC20' },
+    { value: 'USDC', label: 'USD Coin (USDC)', network: 'ETH' },
+    { value: 'BUSD', label: 'Binance USD (BUSD)', network: 'BSC' },
+    
+    // Other cryptocurrencies
+    { value: 'LTC', label: 'Litecoin (LTC)', network: 'LTC' },
+    { value: 'TRX', label: 'TRON (TRX)', network: 'TRC20' },
+    { value: 'AVAX', label: 'Avalanche (AVAX)', network: 'Avalanche' },
+    { value: 'MATIC', label: 'Polygon (MATIC)', network: 'Polygon' },
+    { value: 'BCH', label: 'Bitcoin Cash (BCH)', network: 'BCH' },
+    { value: 'DASH', label: 'Dash (DASH)', network: 'DASH' },
+    { value: 'DOGE', label: 'Dogecoin (DOGE)', network: 'DOGE' },
+    { value: 'SHIB', label: 'Shiba Inu (SHIB)', network: 'ETH' }
   ]
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -46,8 +60,7 @@ export function SupportModal({ isOpen, onClose }: SupportModalProps) {
           amount: parseFloat(amount),
           currency,
           order_id: `support_${Date.now()}`,
-          description: t('support.description'),
-          email: email || undefined
+          description: t('support.description')
         })
       })
 
@@ -71,7 +84,6 @@ export function SupportModal({ isOpen, onClose }: SupportModalProps) {
   const resetForm = () => {
     setAmount('')
     setCurrency('USDT')
-    setEmail('')
     setError('')
   }
 
@@ -132,17 +144,6 @@ export function SupportModal({ isOpen, onClose }: SupportModalProps) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('support.email_optional')}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-              />
             </div>
 
             {error && (

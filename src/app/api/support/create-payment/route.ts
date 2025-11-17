@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare data for Cryptomus
+    // Note: Email notifications are configured in merchant account settings, not in API
     const paymentData = {
       merchant_id: MERCHANT_ID,
       amount: body.amount.toString(),
@@ -68,7 +69,6 @@ export async function POST(request: NextRequest) {
       description: body.description,
       url_callback: `${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/support/webhook`,
       url_success: `${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/support/success`,
-      email: body.email || undefined,
       lifetime: 3600, // 1 hour
       is_payment_multiple: false
     }
