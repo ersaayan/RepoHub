@@ -10,8 +10,14 @@ export async function middleware(request: NextRequest) {
   // Only rate limit API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
     try {
-      // 100 requests per minute per IP
-      await limiter.check(null, 50, request.ip ?? 'CACHE_TOKEN')
+      // Get real IP from Cloudflare or Proxy headers
+      const ip = request.headers.get('cf-connecting-ip') ||
+        request.headers.get('x-forwarded-for')?.split(',')[0] ||
+        request.ip ||
+        'CACHE_TOKEN'
+
+      // 50 requests per minute per IP
+      await limiter.check(null, 50, ip)
     } catch {
       return NextResponse.json(
         { error: 'Too Many Requests' },
