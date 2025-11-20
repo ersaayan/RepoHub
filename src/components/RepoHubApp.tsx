@@ -11,7 +11,7 @@ import { generateScript } from '@/lib/scriptGenerator'
 import { useLocale } from '@/contexts/LocaleContext'
 import { Platform, Package, SelectedPackage, FilterOptions, GeneratedScript } from '@/types'
 
-function RepoHubAppContent() {
+function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) {
   const { t, locale } = useLocale()
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
   const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([])
@@ -61,8 +61,8 @@ function RepoHubAppContent() {
 
   return (
     <div key={locale} className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Header />
-      
+      <Header cryptomusEnabled={cryptomusEnabled} />
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -116,10 +116,10 @@ function RepoHubAppContent() {
   )
 }
 
-export function RepoHubApp() {
+export function RepoHubApp({ cryptomusEnabled }: { cryptomusEnabled: boolean }) {
   return (
     <LocaleProvider>
-      <RepoHubAppContent />
+      <RepoHubAppContent cryptomusEnabled={cryptomusEnabled} />
     </LocaleProvider>
   )
 }

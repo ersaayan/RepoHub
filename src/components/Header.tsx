@@ -5,29 +5,17 @@ import { Button } from '@/components/ui/button'
 import { useTheme } from '@/hooks/useTheme'
 import { useLocale } from '@/contexts/LocaleContext'
 import { SupportModal } from '@/components/SupportModal'
-import { Sun, Moon, Monitor, Globe, Heart } from 'lucide-react'
+import { Sun, Moon, Monitor, Globe, Heart, Github } from 'lucide-react'
 import Image from 'next/image'
 
-export function Header() {
+export interface HeaderProps {
+  cryptomusEnabled: boolean
+}
+
+export function Header({ cryptomusEnabled }: HeaderProps) {
   const { theme, isDark, toggleTheme } = useTheme()
   const { locale, toggleLocale, t } = useLocale()
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false)
-  const [cryptomusEnabled, setCryptomusEnabled] = useState(true)
-
-  useEffect(() => {
-    const checkCryptomusStatus = async () => {
-      try {
-        const response = await fetch('/api/support/status', { cache: 'no-store' })
-        const data = await response.json()
-        setCryptomusEnabled(data.cryptomus_enabled)
-      } catch (error) {
-        // Default to enabled if check fails
-        setCryptomusEnabled(true)
-      }
-    }
-
-    checkCryptomusStatus()
-  }, [])
 
   const getThemeIcon = () => {
     switch (theme) {
@@ -84,6 +72,25 @@ export function Header() {
                 </span>
               </Button>
             )}
+
+            {/* GitHub Link */}
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="w-full justify-start"
+            >
+              <a
+                href="https://github.com/yusufipk/RepoHub"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github className="h-4 w-4" />
+                <span className="ml-2 hidden sm:inline">
+                  GitHub
+                </span>
+              </a>
+            </Button>
 
             {/* Theme Toggle */}
             <Button
