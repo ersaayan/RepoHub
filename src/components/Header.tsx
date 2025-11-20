@@ -17,7 +17,7 @@ export function Header() {
   useEffect(() => {
     const checkCryptomusStatus = async () => {
       try {
-        const response = await fetch('/api/support/status')
+        const response = await fetch('/api/support/status', { cache: 'no-store' })
         const data = await response.json()
         setCryptomusEnabled(data.cryptomus_enabled)
       } catch (error) {

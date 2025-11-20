@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 const CRYPTOMUS_ENABLED = process.env.CRYPTOMUS_ENABLED !== 'false'
 
 export async function GET() {
