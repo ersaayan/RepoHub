@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PackageFetcherV2 } from '@/services/packageFetcherV2'
 import { ArchPackageFetcher } from '@/services/archPackageFetcher'
+import { AurPackageFetcher } from '@/services/aurPackageFetcher'
 import { FedoraPackageFetcher } from '@/services/fedoraPackageFetcher'
 import { WingetPackageFetcher } from '@/services/wingetPackageFetcher'
 import { HomebrewPackageFetcher } from '@/services/homebrewPackageFetcher'
@@ -46,10 +47,19 @@ export async function POST(request: NextRequest) {
           return 'Ubuntu packages synced'
 
         case 'arch': {
+          // Sync official Arch packages
           const archFetcher = new ArchPackageFetcher()
           const archPackages = await archFetcher.fetchAllPackages()
           await archFetcher.storePackages(archPackages)
           return `Arch Linux packages synced (${archPackages.length})`
+        }
+
+        case 'aur': {
+          // Sync AUR packages
+          const aurFetcher = new AurPackageFetcher()
+          const aurPackages = await aurFetcher.fetchAllPackages()
+          await aurFetcher.storePackages(aurPackages)
+          return `AUR packages synced (${aurPackages.length})`
         }
 
         case 'fedora': {

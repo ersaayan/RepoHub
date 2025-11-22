@@ -79,6 +79,7 @@ You can trigger a repository sync using the API. This is useful for updating the
     - `debian`: Sync Debian packages (Official Repo)
     - `ubuntu`: Sync Ubuntu packages (Official Repo)
     - `arch`: Sync Arch Linux packages (Official Repo)
+    - `aur`: Sync Arch User Repository (AUR) packages
     - `fedora`: Sync Fedora packages (Official Repo)
     - `windows`: Sync Windows packages (Winget)
     - `macos`: Sync macOS packages (Homebrew)
