@@ -10,8 +10,9 @@ This feature adds intelligent package recommendations to RepoHub based on user p
 - 3-step wizard for new users
 - Category selection (up to 3 categories)
 - OS detection with manual override option
+- **Auto-fallback to Ubuntu** when OS detection fails
 - Experience level selection (beginner/intermediate/advanced)
-- Persistent localStorage-based profile
+- Persistent localStorage-based profile with **version control**
 
 ### 2. **Smart Recommendations**
 - Hybrid scoring algorithm:
@@ -21,6 +22,8 @@ This feature adds intelligent package recommendations to RepoHub based on user p
   - Preset boost: 10%
 - Curated preset packages for 7 categories
 - Real-time filtering based on user profile
+- **Optimized package fetching** (reduced N+1 queries)
+- **Case-insensitive** package name matching
 
 ### 3. **Categories Supported**
 - 💻 **Development**: IDEs, version control, programming languages
