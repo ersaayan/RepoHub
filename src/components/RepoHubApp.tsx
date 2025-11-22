@@ -20,7 +20,7 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
   const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([])
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null)
-  
+
   // Recommendation profile management
   const {
     profile,
@@ -30,7 +30,7 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
     saveProfile,
     detectedOS
   } = useRecommendationProfile()
-  
+
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   // Show onboarding modal on first visit

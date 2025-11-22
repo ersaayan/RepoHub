@@ -396,7 +396,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       if (browserLang.startsWith('tr')) {
         return 'tr'
       }
-      
+
       return 'en'
     }
 
@@ -415,7 +415,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const t = (key: string, params?: Record<string, string | number>) => {
     const keys = key.split('.')
     let value: any = translations[locale]
-    
+
     for (const k of keys) {
       value = value?.[k]
     }

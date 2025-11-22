@@ -1,56 +1,60 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from 'react'
-import { UserProfile, UserCategory, ExperienceLevel } from '@/types/recommendations'
+import { useState, useEffect, useCallback } from "react";
+import {
+  UserProfile,
+  UserCategory,
+  ExperienceLevel,
+} from "@/types/recommendations";
 
-const STORAGE_KEY = 'repohub_user_profile'
+const STORAGE_KEY = "repohub_user_profile";
 
 /**
  * Detect user's operating system from browser
  */
 function detectOS(): string {
-  if (typeof window === 'undefined') {
-    return 'unknown'
+  if (typeof window === "undefined") {
+    return "unknown";
   }
 
-  const userAgent = window.navigator.userAgent.toLowerCase()
-  const platform = window.navigator.platform.toLowerCase()
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  const platform = window.navigator.platform.toLowerCase();
 
   // Windows
-  if (userAgent.indexOf('win') !== -1 || platform.indexOf('win') !== -1) {
-    return 'windows'
+  if (userAgent.indexOf("win") !== -1 || platform.indexOf("win") !== -1) {
+    return "windows";
   }
 
   // macOS
   if (
-    userAgent.indexOf('mac') !== -1 || 
-    platform.indexOf('mac') !== -1 ||
-    userAgent.indexOf('darwin') !== -1
+    userAgent.indexOf("mac") !== -1 ||
+    platform.indexOf("mac") !== -1 ||
+    userAgent.indexOf("darwin") !== -1
   ) {
-    return 'macos'
+    return "macos";
   }
 
   // Linux distros
-  if (userAgent.indexOf('linux') !== -1 || platform.indexOf('linux') !== -1) {
+  if (userAgent.indexOf("linux") !== -1 || platform.indexOf("linux") !== -1) {
     // Try to detect specific distro from user agent (rare but possible)
-    if (userAgent.indexOf('ubuntu') !== -1) {
-      return 'ubuntu'
+    if (userAgent.indexOf("ubuntu") !== -1) {
+      return "ubuntu";
     }
-    if (userAgent.indexOf('fedora') !== -1) {
-      return 'fedora'
+    if (userAgent.indexOf("fedora") !== -1) {
+      return "fedora";
     }
-    if (userAgent.indexOf('arch') !== -1) {
-      return 'arch'
+    if (userAgent.indexOf("arch") !== -1) {
+      return "arch";
     }
-    if (userAgent.indexOf('debian') !== -1) {
-      return 'debian'
+    if (userAgent.indexOf("debian") !== -1) {
+      return "debian";
     }
-    
+
     // Default to Ubuntu for generic Linux
-    return 'ubuntu'
+    return "ubuntu";
   }
 
-  return 'unknown'
+  return "unknown";
 }
 
 /**
@@ -61,106 +65,118 @@ function getDefaultProfile(): UserProfile {
     categories: [],
     detectedOS: detectOS(),
     selectedOS: undefined,
-    experienceLevel: 'beginner',
+    experienceLevel: "beginner",
     hasCompletedOnboarding: false,
     createdAt: new Date().toISOString(),
-    lastUpdated: new Date().toISOString()
-  }
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
 /**
  * Hook for managing user recommendation profile in localStorage
  */
 export function useRecommendationProfile() {
-  const [profile, setProfile] = useState<UserProfile>(getDefaultProfile())
-  const [isLoading, setIsLoading] = useState(true)
+  const [profile, setProfile] = useState<UserProfile>(getDefaultProfile());
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load profile from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as UserProfile
-        
+        const parsed = JSON.parse(stored) as UserProfile;
+
         // Update detectedOS if it changed
-        const currentOS = detectOS()
+        const currentOS = detectOS();
         if (parsed.detectedOS !== currentOS) {
-          parsed.detectedOS = currentOS
+          parsed.detectedOS = currentOS;
         }
-        
-        setProfile(parsed)
+
+        setProfile(parsed);
       } else {
         // First time user - save default profile
-        const defaultProfile = getDefaultProfile()
-        setProfile(defaultProfile)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile))
+        const defaultProfile = getDefaultProfile();
+        setProfile(defaultProfile);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile));
       }
     } catch (error) {
-      console.error('Error loading user profile:', error)
+      console.error("Error loading user profile:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [])
+  }, []);
 
   // Save profile to localStorage
-  const saveProfile = useCallback((newProfile: Partial<UserProfile>) => {
-    try {
-      const updated: UserProfile = {
-        ...profile,
-        ...newProfile,
-        lastUpdated: new Date().toISOString()
+  const saveProfile = useCallback(
+    (newProfile: Partial<UserProfile>) => {
+      try {
+        const updated: UserProfile = {
+          ...profile,
+          ...newProfile,
+          lastUpdated: new Date().toISOString(),
+        };
+        setProfile(updated);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        return true;
+      } catch (error) {
+        console.error("Error saving user profile:", error);
+        return false;
       }
-      setProfile(updated)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-      return true
-    } catch (error) {
-      console.error('Error saving user profile:', error)
-      return false
-    }
-  }, [profile])
+    },
+    [profile]
+  );
 
   // Update categories
-  const updateCategories = useCallback((categories: UserCategory[]) => {
-    return saveProfile({ categories })
-  }, [saveProfile])
+  const updateCategories = useCallback(
+    (categories: UserCategory[]) => {
+      return saveProfile({ categories });
+    },
+    [saveProfile]
+  );
 
   // Update selected OS (manual override)
-  const updateSelectedOS = useCallback((os: string) => {
-    return saveProfile({ selectedOS: os })
-  }, [saveProfile])
+  const updateSelectedOS = useCallback(
+    (os: string) => {
+      return saveProfile({ selectedOS: os });
+    },
+    [saveProfile]
+  );
 
   // Update experience level
-  const updateExperienceLevel = useCallback((level: ExperienceLevel) => {
-    return saveProfile({ experienceLevel: level })
-  }, [saveProfile])
+  const updateExperienceLevel = useCallback(
+    (level: ExperienceLevel) => {
+      return saveProfile({ experienceLevel: level });
+    },
+    [saveProfile]
+  );
 
   // Mark onboarding as completed
   const completeOnboarding = useCallback(() => {
-    return saveProfile({ hasCompletedOnboarding: true })
-  }, [saveProfile])
+    return saveProfile({ hasCompletedOnboarding: true });
+  }, [saveProfile]);
 
   // Reset profile
   const resetProfile = useCallback(() => {
     try {
-      const defaultProfile = getDefaultProfile()
-      setProfile(defaultProfile)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile))
-      return true
+      const defaultProfile = getDefaultProfile();
+      setProfile(defaultProfile);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile));
+      return true;
     } catch (error) {
-      console.error('Error resetting user profile:', error)
-      return false
+      console.error("Error resetting user profile:", error);
+      return false;
     }
-  }, [])
+  }, []);
 
   // Get effective OS (selectedOS or detectedOS)
   const getEffectiveOS = useCallback((): string => {
-    return profile.selectedOS || profile.detectedOS || 'ubuntu'
-  }, [profile])
+    return profile.selectedOS || profile.detectedOS || "ubuntu";
+  }, [profile]);
 
   // Check if profile is complete enough for recommendations
   const isProfileComplete = useCallback((): boolean => {
-    return profile.categories.length > 0 && getEffectiveOS() !== 'unknown'
-  }, [profile, getEffectiveOS])
+    return profile.categories.length > 0 && getEffectiveOS() !== "unknown";
+  }, [profile, getEffectiveOS]);
 
   return {
     profile,
@@ -174,6 +190,6 @@ export function useRecommendationProfile() {
     getEffectiveOS,
     isProfileComplete,
     detectedOS: profile.detectedOS,
-    hasCompletedOnboarding: profile.hasCompletedOnboarding
-  }
+    hasCompletedOnboarding: profile.hasCompletedOnboarding,
+  };
 }
