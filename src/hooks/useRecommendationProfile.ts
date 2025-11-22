@@ -57,11 +57,14 @@ function detectOS(): string {
   return "unknown";
 }
 
+const CURRENT_PROFILE_VERSION = 1;
+
 /**
  * Get default user profile
  */
 function getDefaultProfile(): UserProfile {
   return {
+    version: CURRENT_PROFILE_VERSION,
     categories: [],
     detectedOS: detectOS(),
     selectedOS: undefined,
@@ -86,6 +89,13 @@ export function useRecommendationProfile() {
       if (stored) {
         const parsed = JSON.parse(stored) as UserProfile;
 
+        // Handle version migration
+        if (!parsed.version || parsed.version < CURRENT_PROFILE_VERSION) {
+          console.log("Migrating profile from version", parsed.version || 0, "to", CURRENT_PROFILE_VERSION);
+          // Add migration logic here when schema changes in the future
+          parsed.version = CURRENT_PROFILE_VERSION;
+        }
+
         // Update detectedOS if it changed
         const currentOS = detectOS();
         if (parsed.detectedOS !== currentOS) {
@@ -93,6 +103,8 @@ export function useRecommendationProfile() {
         }
 
         setProfile(parsed);
+        // Save migrated profile
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
       } else {
         // First time user - save default profile
         const defaultProfile = getDefaultProfile();

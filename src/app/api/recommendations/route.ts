@@ -64,9 +64,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Set default limit
-    const limit =
-      body.limit && body.limit > 0 && body.limit <= 50 ? body.limit : 20;
+    // Validate and set limit with better error message
+    if (body.limit !== undefined && (body.limit < 1 || body.limit > 50)) {
+      return NextResponse.json(
+        { error: "Limit must be between 1 and 50" },
+        { status: 400 }
+      );
+    }
+    const limit = body.limit && body.limit > 0 && body.limit <= 50 ? body.limit : 20;
 
     // Generate recommendations
     const recommendations = await RecommendationService.generateRecommendations(

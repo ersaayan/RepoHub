@@ -49,14 +49,30 @@ export function RecommendationsSection({
             })
 
             if (!response.ok) {
-                throw new Error('Failed to fetch recommendations')
+                const errorData = await response.json().catch(() => ({}))
+                
+                if (response.status === 400) {
+                    throw new Error(errorData.error || 'Invalid request parameters')
+                } else if (response.status === 500) {
+                    throw new Error('Server error. Please try again later.')
+                } else if (response.status === 404) {
+                    throw new Error('Recommendation service not available')
+                } else {
+                    throw new Error(`Request failed: ${response.statusText}`)
+                }
             }
 
             const data = await response.json()
             setRecommendations(data.recommendations || [])
         } catch (err) {
             console.error('Error fetching recommendations:', err)
-            setError(err instanceof Error ? err.message : 'Unknown error')
+            
+            // User-friendly error messages
+            if (err instanceof TypeError && err.message.includes('fetch')) {
+                setError('Network error. Please check your internet connection.')
+            } else {
+                setError(err instanceof Error ? err.message : 'Failed to load recommendations')
+            }
         } finally {
             setLoading(false)
         }

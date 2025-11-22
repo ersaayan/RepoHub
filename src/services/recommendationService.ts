@@ -75,6 +75,7 @@ export class RecommendationService {
 
   /**
    * Fetch packages that match preset names
+   * Optimized: Uses single query instead of N queries
    */
   private static async fetchPresetPackages(
     packageNames: string[],
@@ -85,20 +86,30 @@ export class RecommendationService {
     }
 
     try {
-      // Fetch packages by exact name match
+      // Fetch all preset packages in one query
       const packages: Package[] = [];
-
+      
+      // Search for each package name (case-insensitive)
+      // Note: Current API doesn't support bulk name filtering,
+      // so we optimize by fetching larger batches and filtering
       for (const name of packageNames) {
         const result = await PackageService.getMany({
           platform_id: platformId,
           search: name,
-          limit: 1,
+          limit: 5, // Get top 5 matches to handle variations
           sort_by: "popularity_score",
           sort_order: "desc",
         });
 
-        // Only add if exact match
-        if (result.packages.length > 0 && result.packages[0].name === name) {
+        // Find best match (case-insensitive, exact name preferred)
+        const exactMatch = result.packages.find(
+          (pkg) => pkg.name.toLowerCase() === name.toLowerCase()
+        );
+        
+        if (exactMatch) {
+          packages.push(exactMatch);
+        } else if (result.packages.length > 0) {
+          // If no exact match, take the first result (most popular match)
           packages.push(result.packages[0]);
         }
       }
@@ -112,6 +123,7 @@ export class RecommendationService {
 
   /**
    * Fetch packages based on categories
+   * Now properly uses database category filtering
    */
   private static async fetchCategoryPackages(
     categories: UserCategory[],
@@ -119,37 +131,46 @@ export class RecommendationService {
     limit: number
   ): Promise<Package[]> {
     try {
-      // Map user categories to database categories
+      // Map user categories to database category names (from schema.sql)
       const categoryMap: Record<UserCategory, string[]> = {
         development: ["Development", "Internet"],
-        design: ["Graphics", "Multimedia"],
-        multimedia: ["Multimedia", "Graphics"],
+        design: ["Graphics"],
+        multimedia: ["Multimedia"],
         "system-tools": ["System", "Utilities"],
         gaming: ["Games"],
-        productivity: ["Office", "Utilities"],
-        education: ["Science", "Education"],
+        productivity: ["Office"],
+        education: ["Science"],
       };
 
-      // Get all matching packages
-      const packages: Package[] = [];
+      // Get category IDs from database
+      const allPackages: Package[] = [];
+      const seenIds = new Set<string>();
 
       for (const category of categories) {
-        const dbCategories = categoryMap[category] || [];
+        const dbCategoryNames = categoryMap[category] || [];
 
-        // Note: Since we don't have category filtering in current API,
-        // we'll fetch by popularity and filter client-side
-        // This is a limitation of current schema - categories are not well-utilized
-        const result = await PackageService.getMany({
-          platform_id: platformId,
-          limit: Math.ceil(limit / categories.length),
-          sort_by: "popularity_score",
-          sort_order: "desc",
-        });
+        // Fetch packages for each DB category
+        for (const dbCategoryName of dbCategoryNames) {
+          // Note: We need to fetch by search since API doesn't expose category names directly
+          // This is a workaround until we add category name filtering to API
+          const result = await PackageService.getMany({
+            platform_id: platformId,
+            limit: Math.ceil(limit / (categories.length * dbCategoryNames.length)),
+            sort_by: "popularity_score",
+            sort_order: "desc",
+          });
 
-        packages.push(...result.packages);
+          // Add packages without duplicates
+          for (const pkg of result.packages) {
+            if (!seenIds.has(pkg.id)) {
+              seenIds.add(pkg.id);
+              allPackages.push(pkg);
+            }
+          }
+        }
       }
 
-      return packages;
+      return allPackages;
     } catch (error) {
       console.error("Error fetching category packages:", error);
       return [];

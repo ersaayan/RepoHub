@@ -21,6 +21,7 @@ export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
  * User profile stored in localStorage
  */
 export interface UserProfile {
+  version: number; // Schema version for future migrations
   categories: UserCategory[];
   detectedOS?: string;
   selectedOS?: string; // Manual override

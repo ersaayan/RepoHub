@@ -38,7 +38,10 @@ export function OnboardingModal({
     const { t } = useLocale()
     const [step, setStep] = useState(1)
     const [selectedCategories, setSelectedCategories] = useState<UserCategory[]>([])
-    const [selectedOS, setSelectedOS] = useState<string>(detectedOS)
+    // Default to ubuntu if OS detection fails
+    const [selectedOS, setSelectedOS] = useState<string>(
+        detectedOS !== 'unknown' ? detectedOS : 'ubuntu'
+    )
     const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('beginner')
 
     if (!isOpen) return null
