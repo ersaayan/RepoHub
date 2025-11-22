@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RecommendationService } from "@/services/recommendationService";
-import { RecommendationRequest } from "@/types/recommendations";
+import { RecommendationRequest, UserCategory, ExperienceLevel } from "@/types/recommendations";
 
 export async function POST(request: NextRequest) {
   try {
@@ -151,18 +151,52 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate categories
+    const validCategories: UserCategory[] = [
+      "development",
+      "design",
+      "multimedia",
+      "system-tools",
+      "gaming",
+      "productivity",
+      "education",
+    ];
+    const invalidCategories = categories.filter(
+      (cat) => !validCategories.includes(cat as UserCategory)
+    );
+    if (invalidCategories.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Invalid categories: ${invalidCategories.join(", ")}`,
+          validCategories,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate experience level if provided
+    const validExperienceLevels: ExperienceLevel[] = ["beginner", "intermediate", "advanced"];
+    if (experienceLevel && !validExperienceLevels.includes(experienceLevel as ExperienceLevel)) {
+      return NextResponse.json(
+        {
+          error: `Invalid experience_level. Must be one of: ${validExperienceLevels.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Set default limit
     const parsedLimit =
       limit && parseInt(limit) > 0 && parseInt(limit) <= 50
         ? parseInt(limit)
         : 20;
 
-    // Generate recommendations
+    // Generate recommendations with validated types
     const recommendations = await RecommendationService.generateRecommendations(
       {
         platform_id: platformId,
-        categories: categories as any,
-        experienceLevel: experienceLevel as any,
+        categories: categories as UserCategory[],
+        experienceLevel: experienceLevel as ExperienceLevel | undefined,
         limit: parsedLimit,
       }
     );

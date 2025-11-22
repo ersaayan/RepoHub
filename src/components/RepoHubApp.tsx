@@ -20,6 +20,7 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
   const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([])
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null)
+  const [availablePlatforms, setAvailablePlatforms] = useState<Platform[]>([])
 
   // Recommendation profile management
   const {
@@ -31,6 +32,22 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
   } = useRecommendationProfile()
 
   const [showOnboarding, setShowOnboarding] = useState(false)
+
+  // Load platforms on mount
+  useEffect(() => {
+    const loadPlatforms = async () => {
+      try {
+        const response = await fetch('/api/platforms')
+        if (response.ok) {
+          const platforms = await response.json()
+          setAvailablePlatforms(platforms)
+        }
+      } catch (error) {
+        console.error('Failed to load platforms:', error)
+      }
+    }
+    loadPlatforms()
+  }, [])
 
   // Show onboarding modal on first visit
   useEffect(() => {
@@ -97,64 +114,29 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
   }
 
   const handleGenerateScript = () => {
-    console.log('🔧 handleGenerateScript called')
-    console.log('📦 selectedPackages:', selectedPackages)
-    console.log('🖥️ selectedPlatform:', selectedPlatform)
-    console.log('✅ hasCompletedOnboarding:', hasCompletedOnboarding)
-
     if (selectedPackages.length === 0) {
-      console.log('❌ No packages selected')
       return
     }
 
-    // Use selected platform, or if not selected, use the platform from recommendations profile
+    // Use selected platform, or if not selected, find platform from available platforms
     let platformToUse = selectedPlatform
 
     if (!platformToUse && hasCompletedOnboarding) {
-      // Get effective OS from profile and find matching platform
+      // Get effective OS from profile and find matching platform from loaded platforms
       const effectiveOS = profile.selectedOS || detectedOS
-      console.log('🔍 effectiveOS:', effectiveOS)
-
-      // We need to fetch the platform data - for now, create a mock platform
-      // This should ideally come from the platforms list
-      if (effectiveOS) {
-        platformToUse = {
-          id: effectiveOS,
-          name: effectiveOS.charAt(0).toUpperCase() + effectiveOS.slice(1),
-          description: '',
-          icon: '',
-          packageManager: getPackageManagerForOS(effectiveOS)
+      
+      if (effectiveOS && availablePlatforms.length > 0) {
+        platformToUse = availablePlatforms.find(p => p.id === effectiveOS) || null
+        
+        if (!platformToUse) {
+          console.warn(`Platform not found for OS: ${effectiveOS}`)
         }
-        console.log('🎯 Created platform:', platformToUse)
       }
     }
 
     if (platformToUse) {
-      console.log('✨ Generating script for platform:', platformToUse)
       const script = generateScript(selectedPackages, platformToUse)
-      console.log('📝 Script generated:', script)
       setGeneratedScript(script)
-    } else {
-      console.log('❌ No platform available')
-    }
-  }
-
-  // Helper function to get package manager for OS
-  const getPackageManagerForOS = (os: string): string => {
-    switch (os.toLowerCase()) {
-      case 'windows':
-        return 'winget'
-      case 'macos':
-        return 'brew'
-      case 'ubuntu':
-      case 'debian':
-        return 'apt'
-      case 'fedora':
-        return 'dnf'
-      case 'arch':
-        return 'pacman'
-      default:
-        return 'unknown'
     }
   }
 
@@ -228,13 +210,16 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
           <ScriptPreview
             generatedScript={generatedScript}
             selectedPackages={selectedPackages}
-            selectedPlatform={selectedPlatform || {
-              id: generatedScript.platform,
-              name: generatedScript.platform.charAt(0).toUpperCase() + generatedScript.platform.slice(1),
-              description: '',
-              icon: '',
-              packageManager: getPackageManagerForOS(generatedScript.platform)
-            }}
+            selectedPlatform={selectedPlatform || 
+              availablePlatforms.find(p => p.id === generatedScript.platform) || 
+              {
+                id: generatedScript.platform,
+                name: generatedScript.platform.charAt(0).toUpperCase() + generatedScript.platform.slice(1),
+                description: '',
+                icon: '',
+                packageManager: ''
+              }
+            }
             onClose={handleCloseScriptPreview}
           />
         )}

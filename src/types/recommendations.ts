@@ -52,7 +52,7 @@ export interface RecommendedPackage {
   category?: string;
   license?: string;
   type: "gui" | "cli";
-  platform?: string | any;
+  platform?: Platform;
   platform_id?: string;
   repository: "official" | "third-party" | "aur";
   download_url?: string;

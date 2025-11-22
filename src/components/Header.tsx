@@ -70,7 +70,7 @@ export function Header({ cryptomusEnabled, onResetPreferences, hasProfile }: Hea
               >
                 <Settings className="h-4 w-4" />
                 <span className="ml-2 hidden sm:inline">
-                  {locale === 'tr' ? 'Tercihler' : 'Preferences'}
+                  {t('recommendations.customize')}
                 </span>
               </Button>
             )}
