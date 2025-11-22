@@ -1,21 +1,66 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LocaleProvider } from '@/contexts/LocaleContext'
 import { Header } from './Header'
 import { PlatformSelector } from './PlatformSelector'
 import { PackageBrowserV2 } from './PackageBrowserV2'
 import { SelectionManager } from './SelectionManager'
 import { ScriptPreview } from '@/components/ScriptPreview'
+import { OnboardingModal } from '@/components/OnboardingModal'
+import { RecommendationsSection } from '@/components/RecommendationsSection'
 import { generateScript } from '@/lib/scriptGenerator'
 import { useLocale } from '@/contexts/LocaleContext'
+import { useRecommendationProfile } from '@/hooks/useRecommendationProfile'
 import { Platform, Package, SelectedPackage, FilterOptions, GeneratedScript } from '@/types'
+import { UserCategory, ExperienceLevel } from '@/types/recommendations'
 
 function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) {
   const { t, locale } = useLocale()
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
   const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([])
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null)
+  
+  // Recommendation profile management
+  const {
+    profile,
+    isLoading: isProfileLoading,
+    hasCompletedOnboarding,
+    completeOnboarding,
+    saveProfile,
+    detectedOS
+  } = useRecommendationProfile()
+  
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  // Show onboarding modal on first visit
+  useEffect(() => {
+    if (!isProfileLoading && !hasCompletedOnboarding) {
+      // Delay to allow page to render first
+      const timer = setTimeout(() => {
+        setShowOnboarding(true)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [isProfileLoading, hasCompletedOnboarding])
+
+  const handleOnboardingComplete = (data: {
+    categories: UserCategory[]
+    selectedOS?: string
+    experienceLevel: ExperienceLevel
+  }) => {
+    saveProfile({
+      categories: data.categories,
+      selectedOS: data.selectedOS,
+      experienceLevel: data.experienceLevel,
+      hasCompletedOnboarding: true
+    })
+    completeOnboarding()
+  }
+
+  const handleCustomizePreferences = () => {
+    setShowOnboarding(true)
+  }
 
   const handlePlatformSelect = (platform: Platform) => {
     setSelectedPlatform(platform)
@@ -79,6 +124,15 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
 
         {/* Main Content */}
         <div className="space-y-8">
+          {/* Recommendations Section - Show if profile is complete */}
+          {hasCompletedOnboarding && profile.categories.length > 0 && (
+            <RecommendationsSection
+              onPackageToggle={handlePackageToggle}
+              selectedPackages={selectedPackages}
+              onCustomizeClick={handleCustomizePreferences}
+            />
+          )}
+
           {/* Platform Selector */}
           <PlatformSelector
             selectedPlatform={selectedPlatform}
@@ -111,6 +165,14 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
             onClose={handleCloseScriptPreview}
           />
         )}
+
+        {/* Onboarding Modal */}
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={handleOnboardingComplete}
+          detectedOS={detectedOS || 'unknown'}
+        />
       </div>
     </div>
   )

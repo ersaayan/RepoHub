@@ -1,4 +1,5 @@
 import { Platform, Package, FilterOptions } from '@/types'
+import { RecommendationRequest, RecommendationResponse } from '@/types/recommendations'
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== '')
   ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
@@ -86,6 +87,14 @@ class ApiClient {
 
   async getSyncStatus(): Promise<{ status: string, last_sync: string | null, platforms: string[] }> {
     return this.request<{ status: string, last_sync: string | null, platforms: string[] }>('/sync')
+  }
+
+  // Recommendation operations
+  async getRecommendations(request: RecommendationRequest): Promise<RecommendationResponse> {
+    return this.request<RecommendationResponse>('/recommendations', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    })
   }
 }
 
