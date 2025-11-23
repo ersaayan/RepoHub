@@ -41,32 +41,7 @@ export function RecommendationCard({ pkg, isSelected, onToggle }: Recommendation
                     {pkg.description}
                 </p>
 
-                {/* Recommendation score and reason */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                            {t('recommendations.score')}
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <div className="h-2 w-16 bg-secondary rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-primary rounded-full transition-all"
-                                    style={{ width: `${pkg.recommendationScore}%` }}
-                                />
-                            </div>
-                            <span className="text-xs font-semibold">{pkg.recommendationScore}%</span>
-                        </div>
-                    </div>
 
-                    {pkg.recommendationReason && (
-                        <div className="pt-2 border-t">
-                            <p className="text-xs text-muted-foreground">
-                                <span className="font-semibold">{t('recommendations.reason')}</span>{' '}
-                                {pkg.recommendationReason}
-                            </p>
-                        </div>
-                    )}
-                </div>
 
                 <Button
                     variant={isSelected ? 'default' : 'outline'}

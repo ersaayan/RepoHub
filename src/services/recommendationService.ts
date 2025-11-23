@@ -8,20 +8,10 @@ import {
 } from "@/types/recommendations";
 import {
   getPresetPackageNames,
-  getPresetPriority,
-  getRecommendationReason,
   RECOMMENDATION_PRESETS,
 } from "@/data/recommendationPresets";
 
-/**
- * Recommendation scoring weights
- */
-const SCORING_WEIGHTS = {
-  CATEGORY_MATCH: 0.4,
-  POPULARITY: 0.3,
-  OS_COMPATIBILITY: 0.2,
-  PRESET_BOOST: 0.1,
-};
+
 
 export class RecommendationService {
   /**
@@ -295,6 +285,9 @@ export class RecommendationService {
   /**
    * Score a package based on multiple factors
    */
+  /**
+   * Score a package based on simplified factors (popularity & preset)
+   */
   private static scorePackage(
     pkg: Package,
     categories: UserCategory[],
@@ -303,53 +296,15 @@ export class RecommendationService {
     experienceLevel?: ExperienceLevel,
     matchedCategory?: UserCategory
   ): RecommendedPackage {
-    let score = 0;
-    let reason = "";
     const isPresetMatch = presetPackageNames.includes(pkg.name);
 
-    // 1. Category Match Score (40%)
-    // For preset packages, this is always high
-    const categoryScore = isPresetMatch ? 1.0 : 0.5;
-    score += categoryScore * SCORING_WEIGHTS.CATEGORY_MATCH;
+    // Simplified score: just use popularity score (0-100)
+    // Give a boost to preset packages so they appear first
+    let finalScore = pkg.popularity_score || 0;
 
-    // 2. Popularity Score (30%)
-    // Normalize popularity_score (0-100) to 0-1
-    const popularityScore = (pkg.popularity_score || 0) / 100;
-    score += popularityScore * SCORING_WEIGHTS.POPULARITY;
-
-    // 3. OS Compatibility Score (20%)
-    // All packages from DB should be compatible, so this is always 1.0
-    const osScore = 1.0;
-    score += osScore * SCORING_WEIGHTS.OS_COMPATIBILITY;
-
-    // 4. Preset Boost (10%)
-    // Extra boost for preset packages based on priority
-    let presetBoost = 0;
     if (isPresetMatch) {
-      const priority = getPresetPriority(pkg.name, categories, platformId);
-      if (priority !== null) {
-        presetBoost = priority / 10; // Normalize 1-10 to 0.1-1.0
-
-        // Get recommendation reason from preset
-        const presetReason = getRecommendationReason(pkg.name, categories);
-        if (presetReason) {
-          reason = presetReason;
-        }
-      }
+      finalScore += 100; // Ensure presets are always on top
     }
-    score += presetBoost * SCORING_WEIGHTS.PRESET_BOOST;
-
-    // Default reason if not from preset
-    if (!reason) {
-      if (pkg.popularity_score && pkg.popularity_score > 70) {
-        reason = "Popular choice in the community";
-      } else {
-        reason = "Recommended for your selected categories";
-      }
-    }
-
-    // Normalize final score to 0-100
-    const finalScore = Math.round(score * 100);
 
     return {
       id: pkg.id,
@@ -361,7 +316,7 @@ export class RecommendationService {
       license:
         typeof pkg.license === "string" ? pkg.license : pkg.license?.name,
       type: pkg.type || "cli",
-      platform: pkg.platform,
+      platform: pkg.platform as any,
       platform_id: pkg.platform_id,
       repository: pkg.repository || "official",
       download_url: pkg.download_url,
@@ -371,7 +326,7 @@ export class RecommendationService {
       popularity_score: pkg.popularity_score,
       tags: pkg.tags,
       recommendationScore: finalScore,
-      recommendationReason: reason,
+      recommendationReason: "", // Removed as requested
       presetMatch: isPresetMatch,
       matchedCategory: matchedCategory,
     };
