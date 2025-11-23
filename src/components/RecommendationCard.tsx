@@ -15,6 +15,21 @@ export function RecommendationCard({ pkg, isSelected, onToggle }: Recommendation
     const { t } = useLocale()
     const [iconError, setIconError] = useState(false)
 
+    // Helper to format package name for display
+    const getDisplayName = (name: string, platformId?: string) => {
+        if (platformId === 'windows' && name.includes('.')) {
+            // Handle winget IDs like "Microsoft.VisualStudioCode" or "Git.Git"
+            const parts = name.split('.')
+            const appName = parts[parts.length - 1] // Take the last part
+            
+            // Add spaces to CamelCase (e.g. "VisualStudioCode" -> "Visual Studio Code")
+            return appName.replace(/([A-Z])/g, ' $1').trim()
+        }
+        return name
+    }
+
+    const displayName = getDisplayName(pkg.name, pkg.platform_id)
+
     return (
         <Card
             className={`relative overflow-hidden transition-all hover:shadow-lg cursor-pointer ${isSelected ? 'ring-2 ring-primary' : ''
@@ -52,7 +67,7 @@ export function RecommendationCard({ pkg, isSelected, onToggle }: Recommendation
                         <PackageIcon className="h-8 w-8 text-foreground flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">{pkg.name}</h3>
+                        <h3 className="font-semibold truncate" title={displayName}>{displayName}</h3>
                         <p className="text-xs text-muted-foreground">{pkg.version}</p>
                     </div>
                 </div>

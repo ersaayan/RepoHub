@@ -12,6 +12,21 @@ interface RecommendationListItemProps {
 export function RecommendationListItem({ pkg, isSelected, onToggle }: RecommendationListItemProps) {
     const [iconError, setIconError] = useState(false)
 
+    // Helper to format package name for display
+    const getDisplayName = (name: string, platformId?: string) => {
+        if (platformId === 'windows' && name.includes('.')) {
+            // Handle winget IDs like "Microsoft.VisualStudioCode" or "Git.Git"
+            const parts = name.split('.')
+            const appName = parts[parts.length - 1] // Take the last part
+            
+            // Add spaces to CamelCase (e.g. "VisualStudioCode" -> "Visual Studio Code")
+            return appName.replace(/([A-Z])/g, ' $1').trim()
+        }
+        return name
+    }
+
+    const displayName = getDisplayName(pkg.name, pkg.platform_id)
+
     return (
         <div
             className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${isSelected
@@ -51,7 +66,7 @@ export function RecommendationListItem({ pkg, isSelected, onToggle }: Recommenda
             {/* Package Info */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-sm truncate">{pkg.name}</h4>
+                    <h4 className="font-semibold text-sm truncate" title={displayName}>{displayName}</h4>
                     <span className="text-xs text-muted-foreground">{pkg.version}</span>
                 </div>
             </div>

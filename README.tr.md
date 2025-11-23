@@ -12,6 +12,7 @@ RepoHub, farklı işletim sistemlerinde paket keşfi ve kurulumu için birleşik
 -   **Resmi Depolar**: Yazılımlara yalnızca güvenilir, resmi kaynaklardan erişin.
 -   **Script Oluşturma**: Seçtiğiniz platform için idempotent kurulum scriptleri oluşturun.
 -   **Akıllı Filtreleme**: Paketleri verimli bir şekilde bulun ve filtreleyin.
+-   **Paket İkonları**: Popüler paketler için görsel ikonlar ile kolay tanıma.
 
 ## 🛠️ Teknoloji Yığını
 
@@ -200,7 +201,24 @@ windows: {
 }
 ```
 
-#### 5. Değişikliklerinizi Test Edin
+#### 5. İkon Ekleyin (İsteğe Bağlı)
+
+Paketin önerilerde daha iyi görünmesi için `PACKAGE_ICONS` içine bir ikon eşlemesi ekleyin:
+
+1.  [Simple Icons](https://simpleicons.org/)'da paket slug'ını bulun
+2.  `src/data/recommendationPresets.ts` dosyasındaki `PACKAGE_ICONS` nesnesine ekleyin:
+
+```typescript
+export const PACKAGE_ICONS: Record<string, string> = {
+  // ...
+  "Docker.DockerDesktop": "docker", // Anahtar paket adıyla eşleşmeli, Değer Simple Icons slug'ı olmalı
+  // ...
+};
+```
+
+İkon eklenmezse, varsayılan paket ikonu kullanılacaktır.
+
+#### 6. Değişikliklerinizi Test Edin
 
 1. Doğrulamayı çalıştırın:
    ```bash

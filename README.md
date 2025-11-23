@@ -10,6 +10,7 @@ RepoHub provides a unified interface for package discovery and installation acro
 
 -   **Cross-Platform Support**: Works on Linux (Debian, Ubuntu, Arch, Fedora), Windows, and macOS.
 -   **Official Repositories**: Access software strictly from trusted, official sources.
+-   **Package Icons**: Visual icons for popular packages for easy recognition.
 -   **Script Generation**: Generate idempotent installation scripts for your selected platform.
 -   **Smart Filtering**: efficiently browse and filter packages.
 
@@ -200,7 +201,24 @@ windows: {
 }
 ```
 
-#### 5. Test Your Changes
+#### 5. Add an Icon (Optional)
+
+To make the package look better in recommendations, add an icon mapping in `PACKAGE_ICONS`:
+
+1.  Find the package slug on [Simple Icons](https://simpleicons.org/)
+2.  Add it to the `PACKAGE_ICONS` object in `src/data/recommendationPresets.ts`:
+
+```typescript
+export const PACKAGE_ICONS: Record<string, string> = {
+  // ...
+  "Docker.DockerDesktop": "docker", // Key matches package name, Value is Simple Icons slug
+  // ...
+};
+```
+
+If no icon is added, a default package icon will be used.
+
+#### 6. Test Your Changes
 
 1. Run validation:
    ```bash
