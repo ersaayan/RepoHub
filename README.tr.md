@@ -14,7 +14,7 @@ RepoHub, farklı işletim sistemlerinde paket keşfi ve kurulumu için birleşik
 -   **Akıllı Filtreleme**: Paketleri verimli bir şekilde bulun ve filtreleyin.
 -   **Paket İkonları**: Popüler paketler için görsel ikonlar ile kolay tanıma.
 
-## 🛠️ Teknoloji Yığını
+## 🛠️ Teknoloji
 
 ### Frontend
 -   **Framework**: Next.js 14+ (React)
