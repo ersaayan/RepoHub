@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Sparkles, RefreshCw, Settings, Package as PackageIcon, Star, Grid3x3, List, TrendingUp, Award, ChevronDown, ChevronUp } from 'lucide-react'
+import { Sparkles, Settings, Package as PackageIcon, Star, Grid3x3, List, TrendingUp, Award, ChevronDown, ChevronUp } from 'lucide-react'
 import { RecommendedPackage, UserCategory } from '@/types/recommendations'
 import { Package } from '@/types'
 import { useLocale } from '@/contexts/LocaleContext'
@@ -12,10 +12,13 @@ import { CATEGORY_ICONS } from '@/constants/categoryIcons'
 import { RecommendationCard } from './RecommendationCard'
 import { RecommendationListItem } from './RecommendationListItem'
 
+import { UserProfile } from '@/types/recommendations'
+
 interface RecommendationsSectionProps {
     onPackageToggle: (pkg: Package) => void
     selectedPackages: Package[]
     onCustomizeClick: () => void
+    profile: UserProfile
 }
 
 type ViewMode = 'grid' | 'compact'
@@ -25,17 +28,20 @@ type FilterCategory = 'all' | string
 export function RecommendationsSection({
     onPackageToggle,
     selectedPackages,
-    onCustomizeClick
+    onCustomizeClick,
+    profile
 }: RecommendationsSectionProps) {
     const { t } = useLocale()
-    const { profile, getEffectiveOS, isProfileComplete } = useRecommendationProfile()
+    const { getEffectiveOS, isProfileComplete } = useRecommendationProfile()
+    // Override profile from hook with prop
+    const effectiveProfile = profile
     const [recommendations, setRecommendations] = useState<RecommendedPackage[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<ViewMode>('grid')
     const [sortMode, setSortMode] = useState<SortMode>('recommended')
     const [filterCategory, setFilterCategory] = useState<FilterCategory>('all')
-    const [isExpanded, setIsExpanded] = useState(true)
+    const [isExpanded, setIsExpanded] = useState(false)
 
     const fetchRecommendations = async () => {
         if (!isProfileComplete()) {
@@ -53,8 +59,8 @@ export function RecommendationsSection({
                 },
                 body: JSON.stringify({
                     platform_id: getEffectiveOS(),
-                    categories: profile.categories,
-                    experienceLevel: profile.experienceLevel,
+                    categories: effectiveProfile.categories,
+                    experienceLevel: effectiveProfile.experienceLevel,
                     limit: 12
                 })
             })
@@ -74,7 +80,8 @@ export function RecommendationsSection({
             }
 
             const data = await response.json()
-            setRecommendations(data.recommendations || [])
+            const recs = data.recommendations || []
+            setRecommendations(recs)
         } catch (err) {
             console.error('Error fetching recommendations:', err)
 
@@ -92,9 +99,11 @@ export function RecommendationsSection({
     // Fetch recommendations on mount and when profile changes
     useEffect(() => {
         if (isProfileComplete()) {
+            // If profile just changed (e.g. from customization), we might want to force refresh
+            // But for now, let's rely on the cache key changing which includes profile data
             fetchRecommendations()
         }
-    }, [profile.categories, profile.selectedOS, profile.experienceLevel])
+    }, [effectiveProfile.categories, effectiveProfile.selectedOS, effectiveProfile.experienceLevel])
 
     const isPackageSelected = (pkg: RecommendedPackage) => {
         return selectedPackages.some(selected => selected.id === pkg.id)
@@ -196,18 +205,7 @@ export function RecommendationsSection({
                                         ? (t('common.deselect_all') || 'Deselect All')
                                         : (t('common.select_all') || 'Select All')}
                                 </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        fetchRecommendations()
-                                    }}
-                                    disabled={loading}
-                                >
-                                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                                    {t('recommendations.refresh')}
-                                </Button>
+
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -241,7 +239,7 @@ export function RecommendationsSection({
                         <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
                             {getEffectiveOS()}
                         </span>
-                        {profile.categories.map(cat => (
+                        {effectiveProfile.categories.map(cat => (
                             <span
                                 key={cat}
                                 className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground"
@@ -271,7 +269,7 @@ export function RecommendationsSection({
                             >
                                 All ({recommendations.length})
                             </Button>
-                            {profile.categories.map(cat => {
+                            {effectiveProfile.categories.map(cat => {
                                 const count = getCategoryCount(cat)
                                 const Icon = CATEGORY_ICONS[cat]
                                 return (
@@ -368,7 +366,7 @@ export function RecommendationsSection({
                 <CardContent>
                     {loading && (
                         <div className="text-center py-12">
-                            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                            <Sparkles className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
                             <p className="text-muted-foreground">{t('recommendations.loading')}</p>
                         </div>
                     )}
@@ -376,7 +374,7 @@ export function RecommendationsSection({
                     {error && (
                         <div className="text-center py-12">
                             <p className="text-destructive mb-4">{error}</p>
-                            <Button onClick={fetchRecommendations} variant="outline">
+                            <Button onClick={() => fetchRecommendations()} variant="outline">
                                 Try Again
                             </Button>
                         </div>

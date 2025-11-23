@@ -124,10 +124,10 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
     if (!platformToUse && hasCompletedOnboarding) {
       // Get effective OS from profile and find matching platform from loaded platforms
       const effectiveOS = profile.selectedOS || detectedOS
-      
+
       if (effectiveOS && availablePlatforms.length > 0) {
         platformToUse = availablePlatforms.find(p => p.id === effectiveOS) || null
-        
+
         if (!platformToUse) {
           console.warn(`Platform not found for OS: ${effectiveOS}`)
         }
@@ -179,6 +179,7 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
               onPackageToggle={handlePackageToggle}
               selectedPackages={selectedPackages}
               onCustomizeClick={handleCustomizePreferences}
+              profile={profile}
             />
           )}
 
@@ -210,15 +211,15 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
           <ScriptPreview
             generatedScript={generatedScript}
             selectedPackages={selectedPackages}
-            selectedPlatform={selectedPlatform || 
-              availablePlatforms.find(p => p.id === generatedScript.platform) || 
-              {
-                id: generatedScript.platform,
-                name: generatedScript.platform.charAt(0).toUpperCase() + generatedScript.platform.slice(1),
-                description: '',
-                icon: '',
-                packageManager: ''
-              }
+            selectedPlatform={selectedPlatform ||
+              availablePlatforms.find(p => p.id === generatedScript.platform) ||
+            {
+              id: generatedScript.platform,
+              name: generatedScript.platform.charAt(0).toUpperCase() + generatedScript.platform.slice(1),
+              description: '',
+              icon: '',
+              packageManager: ''
+            }
             }
             onClose={handleCloseScriptPreview}
           />
