@@ -61,7 +61,7 @@ export function RecommendationsSection({
                     platform_id: getEffectiveOS(),
                     categories: effectiveProfile.categories,
                     experienceLevel: effectiveProfile.experienceLevel,
-                    limit: 12
+                    limit: 1000
                 })
             })
 

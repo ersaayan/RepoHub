@@ -16,8 +16,16 @@ export async function middleware(request: NextRequest) {
         request.ip ||
         'CACHE_TOKEN'
 
-      // 50 requests per minute per IP
-      await limiter.check(null, 50, ip)
+      // Exempt localhost from rate limiting
+      const isLocalhost = ip === '127.0.0.1' ||
+        ip === '::1' ||
+        ip === 'localhost' ||
+        ip === 'CACHE_TOKEN'
+
+      if (!isLocalhost) {
+        // 50 requests per minute per IP
+        await limiter.check(null, 50, ip)
+      }
     } catch {
       return NextResponse.json(
         { error: 'Too Many Requests' },

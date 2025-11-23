@@ -26,7 +26,6 @@ export function RecommendationListItem({ pkg, isSelected, onToggle }: Recommenda
                     <h4 className="font-semibold text-sm truncate">{pkg.name}</h4>
                     <span className="text-xs text-muted-foreground">{pkg.version}</span>
                 </div>
-                <p className="text-xs text-muted-foreground truncate">{pkg.description}</p>
             </div>
 
 

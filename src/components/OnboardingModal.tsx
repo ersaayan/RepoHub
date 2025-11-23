@@ -174,12 +174,6 @@ export function OnboardingModal({
                                     )
                                 })}
                             </div>
-
-                            {selectedCategories.length > 0 && (
-                                <p className="text-sm text-muted-foreground text-center">
-                                    {t('onboarding.step1.selected', { count: selectedCategories.length })}
-                                </p>
-                            )}
                         </div>
                     )}
 

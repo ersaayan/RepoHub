@@ -30,12 +30,6 @@ export function RecommendationCard({ pkg, isSelected, onToggle }: Recommendation
                     </div>
                 </div>
 
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                    {pkg.description}
-                </p>
-
-
-
                 <Button
                     variant={isSelected ? 'default' : 'outline'}
                     size="sm"

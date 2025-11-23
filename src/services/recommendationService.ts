@@ -1,14 +1,10 @@
-import { PackageService } from "./packageService";
 import { Package } from "@/models/Package";
 import {
   RecommendationRequest,
   RecommendedPackage,
   UserCategory,
-  ExperienceLevel,
 } from "@/types/recommendations";
-import { getPackagesForPlatform } from "@/data/recommendationPresets";
-
-
+import { getPackagesWithCategories, getPresetDetails } from "@/data/recommendationPresets";
 
 export class RecommendationService {
   /**
@@ -17,19 +13,19 @@ export class RecommendationService {
   static async generateRecommendations(
     request: RecommendationRequest
   ): Promise<RecommendedPackage[]> {
-    const { platform_id, categories, experienceLevel, limit = 20 } = request;
+    const { platform_id, categories, limit = 20 } = request;
 
     // Step 1: Get preset package names for the user's categories and platform
-    const presetPackageNames = getPackagesForPlatform(platform_id, categories);
+    const presetPackagesInfo = getPackagesWithCategories(platform_id, categories);
+    const presetPackageNames = presetPackagesInfo.map(p => p.name);
 
-    // Step 2: Fetch packages from database
+    // Step 2: Generate packages from presets (no DB query)
     const packageCategoryMap = new Map<string, UserCategory>();
 
     // Fetch preset packages
     const presetPackages = await this.fetchPresetPackages(
-      presetPackageNames,
+      presetPackagesInfo,
       platform_id,
-      categories,
       packageCategoryMap
     );
 
@@ -55,54 +51,49 @@ export class RecommendationService {
 
   /**
    * Fetch packages that match preset names
+   * optimized to use static data instead of DB queries
    */
   private static async fetchPresetPackages(
-    packageNames: string[],
+    packagesInfo: { name: string; category: UserCategory }[],
     platformId: string,
-    categories: UserCategory[],
     categoryMap: Map<string, UserCategory>
   ): Promise<Package[]> {
-    if (packageNames.length === 0) {
+    if (packagesInfo.length === 0) {
       return [];
     }
 
-    try {
-      const packages: Package[] = [];
-      let categoryIndex = 0;
+    const packages: Package[] = [];
 
-      // Search for each package name (case-insensitive)
-      for (const name of packageNames) {
-        const result = await PackageService.getMany({
-          platform_id: platformId,
-          search: name,
-          limit: 5, // Get top 5 matches to handle variations
-          sort_by: "popularity_score",
-          sort_order: "desc",
-        });
-
-        // Find best match (case-insensitive, exact name preferred)
-        const exactMatch = result.packages.find(
-          (pkg) => pkg.name.toLowerCase() === name.toLowerCase()
-        );
-
-        if (exactMatch) {
-          packages.push(exactMatch);
-          // Distribute categories evenly
-          categoryMap.set(exactMatch.id, categories[categoryIndex % categories.length]);
-          categoryIndex++;
-        } else if (result.packages.length > 0) {
-          // If no exact match, take the first result (most popular match)
-          packages.push(result.packages[0]);
-          categoryMap.set(result.packages[0].id, categories[categoryIndex % categories.length]);
-          categoryIndex++;
+    for (const { name, category } of packagesInfo) {
+      const { description } = getPresetDetails(name);
+      
+      // Create a mock package object to avoid database queries
+      // This ensures instant loading for recommendations
+      const mockPackage: Package = {
+        id: `${platformId}:${name.toLowerCase()}`, 
+        name: name,
+        description: description,
+        version: "latest",
+        platform_id: platformId,
+        type: "cli", 
+        repository: "official",
+        popularity_score: 100, 
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+        downloads_count: 10000, 
+        platform: {
+            id: platformId,
+            name: platformId.charAt(0).toUpperCase() + platformId.slice(1),
+            package_manager: "unknown" 
         }
-      }
+      };
 
-      return packages;
-    } catch (error) {
-      console.error("Error fetching preset packages:", error);
-      return [];
+      packages.push(mockPackage);
+      categoryMap.set(mockPackage.id, category);
     }
+
+    return packages;
   }
 
 
