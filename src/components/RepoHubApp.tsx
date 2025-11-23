@@ -1,21 +1,95 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { LocaleProvider } from '@/contexts/LocaleContext'
 import { Header } from './Header'
 import { PlatformSelector } from './PlatformSelector'
 import { PackageBrowserV2 } from './PackageBrowserV2'
 import { SelectionManager } from './SelectionManager'
 import { ScriptPreview } from '@/components/ScriptPreview'
+import { OnboardingModal } from '@/components/OnboardingModal'
+import { RecommendationsSection } from '@/components/RecommendationsSection'
 import { generateScript } from '@/lib/scriptGenerator'
 import { useLocale } from '@/contexts/LocaleContext'
+import { useRecommendationProfile } from '@/hooks/useRecommendationProfile'
 import { Platform, Package, SelectedPackage, FilterOptions, GeneratedScript } from '@/types'
+import { UserCategory } from '@/types/recommendations'
+import { Sparkles, Settings, Package as PackageIcon } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) {
   const { t, locale } = useLocale()
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
   const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([])
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null)
+  const [availablePlatforms, setAvailablePlatforms] = useState<Platform[]>([])
+
+  // Recommendation profile management
+  const {
+    profile,
+    isLoading: isProfileLoading,
+    hasCompletedOnboarding,
+    saveProfile,
+    detectedOS,
+    getEffectiveOS
+  } = useRecommendationProfile()
+
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  // Load platforms on mount
+  useEffect(() => {
+    const loadPlatforms = async () => {
+      try {
+        const response = await fetch('/api/platforms')
+        if (response.ok) {
+          const platforms = await response.json()
+          setAvailablePlatforms(platforms)
+        }
+      } catch (error) {
+        console.error('Failed to load platforms:', error)
+      }
+    }
+    loadPlatforms()
+  }, [])
+
+  // Show onboarding modal on first visit - DISABLED as per user request
+  /*
+  useEffect(() => {
+    if (!isProfileLoading && !hasCompletedOnboarding) {
+      // Delay to allow page to render first
+      const timer = setTimeout(() => {
+        setShowOnboarding(true)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [isProfileLoading, hasCompletedOnboarding])
+  */
+
+  const handleOnboardingComplete = (data: {
+    categories: UserCategory[]
+    selectedOS?: string
+  }) => {
+    console.log('🎯 Onboarding completed with data:', data)
+
+    const success = saveProfile({
+      categories: data.categories,
+      selectedOS: data.selectedOS,
+      hasCompletedOnboarding: true
+    })
+
+    console.log('💾 Profile save result:', success)
+
+    // Don't call completeOnboarding() - it causes a second save with empty state!
+    // completeOnboarding()
+
+    // Force close modal
+    setShowOnboarding(false)
+  }
+
+  const handleCustomizePreferences = () => {
+    setShowOnboarding(true)
+  }
 
   const handlePlatformSelect = (platform: Platform) => {
     setSelectedPlatform(platform)
@@ -44,8 +118,28 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
   }
 
   const handleGenerateScript = () => {
-    if (selectedPlatform && selectedPackages.length > 0) {
-      const script = generateScript(selectedPackages, selectedPlatform)
+    if (selectedPackages.length === 0) {
+      return
+    }
+
+    // Use selected platform, or if not selected, find platform from available platforms
+    let platformToUse = selectedPlatform
+
+    if (!platformToUse && hasCompletedOnboarding) {
+      // Get effective OS from profile and find matching platform from loaded platforms
+      const effectiveOS = profile.selectedOS || detectedOS
+
+      if (effectiveOS && availablePlatforms.length > 0) {
+        platformToUse = availablePlatforms.find(p => p.id === effectiveOS) || null
+
+        if (!platformToUse) {
+          console.warn(`Platform not found for OS: ${effectiveOS}`)
+        }
+      }
+    }
+
+    if (platformToUse) {
+      const script = generateScript(selectedPackages, platformToUse)
       setGeneratedScript(script)
     }
   }
@@ -58,10 +152,31 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
   const handleCloseScriptPreview = () => {
     setGeneratedScript(null)
   }
+  // Track previous effective OS to detect profile changes
+  const prevEffectiveOS = useRef<string | null>(null)
 
+  // Calculate current effective OS
+  const effectiveOS = getEffectiveOS()
+
+  // Sync platform selection with profile changes
+  useEffect(() => {
+    if (hasCompletedOnboarding && availablePlatforms.length > 0) {
+      const platform = availablePlatforms.find(p => p.id === effectiveOS)
+
+      // If profile OS changed, or if no platform is selected yet, update selection
+      if (platform && (effectiveOS !== prevEffectiveOS.current || !selectedPlatform)) {
+        setSelectedPlatform(platform)
+        prevEffectiveOS.current = effectiveOS
+      }
+    }
+  }, [hasCompletedOnboarding, effectiveOS, availablePlatforms, selectedPlatform])
   return (
     <div key={locale} className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Header cryptomusEnabled={cryptomusEnabled} />
+      <Header
+        cryptomusEnabled={cryptomusEnabled}
+        onResetPreferences={handleCustomizePreferences}
+        hasProfile={hasCompletedOnboarding}
+      />
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -79,10 +194,45 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
 
         {/* Main Content */}
         <div className="space-y-8">
+          {/* Recommendations Section - Show if profile is complete */}
+          {hasCompletedOnboarding && profile.categories.length > 0 ? (
+            <RecommendationsSection
+              onPackageToggle={handlePackageToggle}
+              selectedPackages={selectedPackages}
+              onCustomizeClick={handleCustomizePreferences}
+              profile={profile}
+            />
+          ) : (
+            /* Empty State for Recommendations */
+            <Card className="w-full bg-gradient-to-r from-primary/5 to-secondary/5 border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="bg-background p-4 rounded-full shadow-sm mb-4">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">
+                  {t('recommendations.empty_title') || 'Get Personalized Recommendations'}
+                </h3>
+                <p className="text-muted-foreground max-w-md mb-6">
+                  {t('recommendations.empty_description') || 'Tell us about your role and platform to get a curated list of essential packages.'}
+                </p>
+                <Button onClick={handleCustomizePreferences} size="lg">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {t('recommendations.start') || 'Start Recommendation Wizard'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+
+
+
+
           {/* Platform Selector */}
           <PlatformSelector
             selectedPlatform={selectedPlatform}
             onPlatformSelect={handlePlatformSelect}
+            isLocked={selectedPackages.length > 0}
+            lockedMessage="Clear your selection to switch platforms"
           />
 
           {/* Package Browser */}
@@ -107,10 +257,27 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
           <ScriptPreview
             generatedScript={generatedScript}
             selectedPackages={selectedPackages}
-            selectedPlatform={selectedPlatform}
+            selectedPlatform={selectedPlatform ||
+              availablePlatforms.find(p => p.id === generatedScript.platform) ||
+            {
+              id: generatedScript.platform,
+              name: generatedScript.platform.charAt(0).toUpperCase() + generatedScript.platform.slice(1),
+              description: '',
+              icon: '',
+              packageManager: ''
+            }
+            }
             onClose={handleCloseScriptPreview}
           />
         )}
+
+        {/* Onboarding Modal */}
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={handleOnboardingComplete}
+          detectedOS={detectedOS || 'unknown'}
+        />
       </div>
     </div>
   )
