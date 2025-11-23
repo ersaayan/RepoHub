@@ -133,7 +133,7 @@ export function RecommendationsSection({
     return (
         <Card className="w-full">
             <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
                         <div>
@@ -152,7 +152,7 @@ export function RecommendationsSection({
                             </CardDescription>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                         {isExpanded && (
                             <>
                                 <Button
@@ -182,6 +182,7 @@ export function RecommendationsSection({
                                         }
                                     }}
                                     disabled={loading || recommendations.length === 0}
+                                    className="w-full sm:w-auto"
                                 >
                                     {recommendations.every(rec => selectedPackages.some(sel => sel.id === rec.id))
                                         ? (t('common.deselect_all') || 'Deselect All')
@@ -195,6 +196,7 @@ export function RecommendationsSection({
                                         e.stopPropagation()
                                         onCustomizeClick()
                                     }}
+                                    className="w-full sm:w-auto"
                                 >
                                     <Settings className="h-4 w-4 mr-2" />
                                     {t('recommendations.customize')}
@@ -204,7 +206,7 @@ export function RecommendationsSection({
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-8 w-full sm:w-8 p-0"
                         >
                             {isExpanded ? (
                                 <ChevronUp className="h-4 w-4" />
@@ -249,7 +251,7 @@ export function RecommendationsSection({
                                 }}
                                 className="h-8 text-xs"
                             >
-                                All ({recommendations.length})
+                                {(t('common.all') || 'All')} ({recommendations.length})
                             </Button>
                             {profile.categories.map(cat => {
                                 const count = getCategoryCount(cat)
