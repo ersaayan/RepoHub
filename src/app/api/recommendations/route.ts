@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RecommendationService } from "@/services/recommendationService";
-import { RecommendationRequest, UserCategory, ExperienceLevel } from "@/types/recommendations";
+import { RecommendationRequest, UserCategory } from "@/types/recommendations";
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,7 +79,6 @@ export async function POST(request: NextRequest) {
       {
         platform_id: body.platform_id,
         categories: body.categories,
-        experienceLevel: body.experienceLevel,
         limit,
       }
     );
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
       userProfile: {
         categories: body.categories,
         platform: body.platform_id,
-        experienceLevel: body.experienceLevel,
       },
     });
   } catch (error) {
@@ -110,7 +108,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const platformId = searchParams.get("platform_id");
     const categoriesParam = searchParams.get("categories");
-    const experienceLevel = searchParams.get("experience_level");
     const limit = searchParams.get("limit");
 
     // Validate required fields
@@ -174,17 +171,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Validate experience level if provided
-    const validExperienceLevels: ExperienceLevel[] = ["beginner", "intermediate", "advanced"];
-    if (experienceLevel && !validExperienceLevels.includes(experienceLevel as ExperienceLevel)) {
-      return NextResponse.json(
-        {
-          error: `Invalid experience_level. Must be one of: ${validExperienceLevels.join(", ")}`,
-        },
-        { status: 400 }
-      );
-    }
-
     // Set default limit
     const parsedLimit =
       limit && parseInt(limit) > 0 && parseInt(limit) <= 50
@@ -196,7 +182,6 @@ export async function GET(request: NextRequest) {
       {
         platform_id: platformId,
         categories: categories as UserCategory[],
-        experienceLevel: experienceLevel as ExperienceLevel | undefined,
         limit: parsedLimit,
       }
     );
@@ -207,7 +192,6 @@ export async function GET(request: NextRequest) {
       userProfile: {
         categories,
         platform: platformId,
-        experienceLevel,
       },
     });
   } catch (error) {

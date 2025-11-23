@@ -13,7 +13,10 @@ import { generateScript } from '@/lib/scriptGenerator'
 import { useLocale } from '@/contexts/LocaleContext'
 import { useRecommendationProfile } from '@/hooks/useRecommendationProfile'
 import { Platform, Package, SelectedPackage, FilterOptions, GeneratedScript } from '@/types'
-import { UserCategory, ExperienceLevel } from '@/types/recommendations'
+import { UserCategory } from '@/types/recommendations'
+import { Sparkles, Settings, Package as PackageIcon } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) {
   const { t, locale } = useLocale()
@@ -50,7 +53,8 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
     loadPlatforms()
   }, [])
 
-  // Show onboarding modal on first visit
+  // Show onboarding modal on first visit - DISABLED as per user request
+  /*
   useEffect(() => {
     if (!isProfileLoading && !hasCompletedOnboarding) {
       // Delay to allow page to render first
@@ -60,18 +64,17 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
       return () => clearTimeout(timer)
     }
   }, [isProfileLoading, hasCompletedOnboarding])
+  */
 
   const handleOnboardingComplete = (data: {
     categories: UserCategory[]
     selectedOS?: string
-    experienceLevel: ExperienceLevel
   }) => {
     console.log('🎯 Onboarding completed with data:', data)
 
     const success = saveProfile({
       categories: data.categories,
       selectedOS: data.selectedOS,
-      experienceLevel: data.experienceLevel,
       hasCompletedOnboarding: true
     })
 
@@ -192,13 +195,32 @@ function RepoHubAppContent({ cryptomusEnabled }: { cryptomusEnabled: boolean }) 
         {/* Main Content */}
         <div className="space-y-8">
           {/* Recommendations Section - Show if profile is complete */}
-          {hasCompletedOnboarding && profile.categories.length > 0 && (
+          {hasCompletedOnboarding && profile.categories.length > 0 ? (
             <RecommendationsSection
               onPackageToggle={handlePackageToggle}
               selectedPackages={selectedPackages}
               onCustomizeClick={handleCustomizePreferences}
               profile={profile}
             />
+          ) : (
+            /* Empty State for Recommendations */
+            <Card className="w-full bg-gradient-to-r from-primary/5 to-secondary/5 border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="bg-background p-4 rounded-full shadow-sm mb-4">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">
+                  {t('recommendations.empty_title') || 'Get Personalized Recommendations'}
+                </h3>
+                <p className="text-muted-foreground max-w-md mb-6">
+                  {t('recommendations.empty_description') || 'Tell us about your role and platform to get a curated list of essential packages.'}
+                </p>
+                <Button onClick={handleCustomizePreferences} size="lg">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {t('recommendations.start') || 'Start Recommendation Wizard'}
+                </Button>
+              </CardContent>
+            </Card>
           )}
 
 

@@ -13,11 +13,6 @@ export type UserCategory =
   | "education";
 
 /**
- * User experience level
- */
-export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
-
-/**
  * User profile stored in localStorage
  */
 export interface UserProfile {
@@ -25,7 +20,6 @@ export interface UserProfile {
   categories: UserCategory[];
   detectedOS?: string;
   selectedOS?: string; // Manual override
-  experienceLevel?: ExperienceLevel;
   hasCompletedOnboarding: boolean;
   createdAt: string;
   lastUpdated: string;
@@ -37,7 +31,6 @@ export interface UserProfile {
 export interface RecommendationRequest {
   platform_id: string;
   categories: UserCategory[];
-  experienceLevel?: ExperienceLevel;
   limit?: number;
 }
 
@@ -76,7 +69,6 @@ export interface PackagePreset {
   platforms: string[]; // ['windows', 'macos', 'ubuntu', 'arch', 'fedora']
   priority: number; // 1-10, higher = more important
   reason: string; // Why this package is recommended
-  experienceLevel?: ExperienceLevel[]; // Target experience levels
 }
 
 /**

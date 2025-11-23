@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import {
   UserProfile,
   UserCategory,
-  ExperienceLevel,
 } from "@/types/recommendations";
 
 const STORAGE_KEY = "repohub_user_profile";
@@ -83,46 +82,16 @@ export function useRecommendationProfile() {
 
   // Load profile from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as UserProfile;
-
-        // Handle version migration
-        if (!parsed.version || parsed.version < CURRENT_PROFILE_VERSION) {
-          console.log(
-            "Migrating profile from version",
-            parsed.version || 0,
-            "to",
-            CURRENT_PROFILE_VERSION
-          );
-          // Add migration logic here when schema changes in the future
-          parsed.version = CURRENT_PROFILE_VERSION;
-        }
-
-        // Update detectedOS if it changed
-        const currentOS = detectOS();
-        if (parsed.detectedOS !== currentOS) {
-          parsed.detectedOS = currentOS;
-        }
-
-        setProfile(parsed);
-        // Save migrated profile
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      } else {
-        // First time user - save default profile
-        const defaultProfile = getDefaultProfile();
-        setProfile(defaultProfile);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile));
-      }
-    } catch (error) {
-      console.error("Error loading user profile:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    // We intentionally do NOT load from localStorage anymore to reset on refresh
+    // as requested by user preference change.
+    
+    // Initialize with default profile (detects OS)
+    const defaultProfile = getDefaultProfile();
+    setProfile(defaultProfile);
+    setIsLoading(false);
   }, []);
 
-  // Save profile to localStorage
+  // Save profile to state only (session persistence)
   const saveProfile = useCallback(
     (newProfile: Partial<UserProfile>) => {
       try {
@@ -133,12 +102,10 @@ export function useRecommendationProfile() {
           lastUpdated: new Date().toISOString(),
         };
 
-        console.log("💾 Saving profile:", updated);
+        console.log("💾 Saving profile (Session only):", updated);
 
         setProfile(updated);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-
-        console.log("✅ Profile saved successfully to localStorage");
+        // localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); // Disabled persistence
 
         return true;
       } catch (error) {
@@ -177,7 +144,7 @@ export function useRecommendationProfile() {
     try {
       const defaultProfile = getDefaultProfile();
       setProfile(defaultProfile);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile));
+      // localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile)); // Disabled persistence
       return true;
     } catch (error) {
       console.error("Error resetting user profile:", error);

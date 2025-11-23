@@ -42,7 +42,7 @@ export function RecommendationsSection({
     const [error, setError] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<ViewMode>('grid')
     const [filterCategory, setFilterCategory] = useState<FilterCategory>('all')
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(true)
 
     const fetchRecommendations = async () => {
         if (!isProfileComplete()) {
@@ -61,7 +61,6 @@ export function RecommendationsSection({
                 body: JSON.stringify({
                     platform_id: getEffectiveOS(),
                     categories: profile.categories,
-                    experienceLevel: profile.experienceLevel,
                     limit: 1000
                 })
             })
@@ -104,7 +103,7 @@ export function RecommendationsSection({
             // But for now, let's rely on the cache key changing which includes profile data
             fetchRecommendations()
         }
-    }, [profile.categories, profile.selectedOS, profile.experienceLevel])
+    }, [profile.categories, profile.selectedOS])
 
     const isPackageSelected = (pkg: RecommendedPackage) => {
         return selectedPackages.some(selected => selected.id === pkg.id)

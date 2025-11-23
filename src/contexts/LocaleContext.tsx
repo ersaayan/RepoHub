@@ -188,6 +188,9 @@ const translations = {
       reason: "Why recommended:",
       based_on: "Based on your interests in:",
       packages: "packages",
+      empty_title: "Get Personalized Recommendations",
+      empty_description: "Tell us about your role and platform to get a curated list of essential packages.",
+      start: "Start Recommendation Wizard",
       sort: {
         recommended: "Best Match",
         popular: "Popular",
@@ -378,6 +381,9 @@ const translations = {
       reason: "Neden önerildi:",
       based_on: "İlgi alanlarınıza göre:",
       packages: "paket",
+      empty_title: "Kişiselleştirilmiş Öneriler Alın",
+      empty_description: "Size temel paketlerden oluşan bir liste sunmamız için kategorileri ve platformunuzu belirtin.",
+      start: "Öneri Sihirbazını Başlat",
       sort: {
         recommended: "En Uygun",
         popular: "Popüler",
