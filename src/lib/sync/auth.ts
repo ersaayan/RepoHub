@@ -15,43 +15,30 @@ export class SyncAuth {
 
     // In server-only mode, check for secret key in header
     const secretKey = request.headers.get('x-sync-secret')
-    
+
     if (!this.SYNC_SECRET) {
-      return { 
-        allowed: false, 
-        reason: 'Sync secret key not configured on server' 
+      return {
+        allowed: false,
+        reason: 'Sync secret key not configured on server'
       }
     }
 
     if (!secretKey) {
-      return { 
-        allowed: false, 
-        reason: 'Sync secret key required in server-only mode' 
+      return {
+        allowed: false,
+        reason: 'Sync secret key required in server-only mode'
       }
     }
 
     if (secretKey !== this.SYNC_SECRET) {
-      return { 
-        allowed: false, 
-        reason: 'Invalid sync secret key' 
+      return {
+        allowed: false,
+        reason: 'Invalid sync secret key'
       }
     }
 
-    // Additional check: verify request is from localhost or same server
-    const clientIP = request.headers.get('x-forwarded-for') || 
-                    request.headers.get('x-real-ip') || 
-                    'unknown'
-    
-    const allowedIPs = ['127.0.0.1', 'localhost', '::1']
-    const isLocalRequest = allowedIPs.includes(clientIP.split(',')[0].trim())
-
-    if (!isLocalRequest && secretKey !== this.SYNC_SECRET) {
-      return { 
-        allowed: false, 
-        reason: 'Sync operations only allowed from server in server-only mode' 
-      }
-    }
-
+    // If we reach here, the secret key is valid.
+    // In server-only mode, we strictly require the secret key, so no further checks are needed.
     return { allowed: true }
   }
 
@@ -62,33 +49,26 @@ export class SyncAuth {
   static async isWriteAllowed(request: NextRequest): Promise<{ allowed: boolean; reason?: string }> {
     // Always enforce auth for writes
     const secretKey = request.headers.get('x-sync-secret')
-    
-    // Check localhost
-    const clientIP = request.headers.get('x-forwarded-for') || 
-                    request.headers.get('x-real-ip') || 
-                    'unknown'
-    
-    const allowedIPs = ['127.0.0.1', 'localhost', '::1']
-    const isLocalRequest = allowedIPs.includes(clientIP.split(',')[0].trim())
 
-    if (isLocalRequest) {
-        return { allowed: true }
-    }
+    // Check localhost - DISABLED FOR SECURITY
+    // We cannot trust X-Forwarded-For headers as they can be spoofed
+    // const clientIP = request.headers.get('x-forwarded-for') || ...
 
+    // Always require secret key for write operations
     if (!this.SYNC_SECRET) {
-      return { 
-        allowed: false, 
-        reason: 'Secret key not configured on server' 
+      return {
+        allowed: false,
+        reason: 'Secret key not configured on server'
       }
     }
 
     if (secretKey === this.SYNC_SECRET) {
-        return { allowed: true }
+      return { allowed: true }
     }
 
-    return { 
-        allowed: false, 
-        reason: 'Write operations require authentication' 
+    return {
+      allowed: false,
+      reason: 'Write operations require authentication'
     }
   }
 
@@ -115,7 +95,7 @@ export class SyncAuth {
     if (days === 0) {
       return new Date(0) // Return epoch time if disabled
     }
-    
+
     const nextSync = new Date(lastSyncTime || new Date())
     nextSync.setDate(nextSync.getDate() + days)
     return nextSync

@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const packageData = await PackageService.getById(params.id)
-    
+
     if (!packageData) {
       return NextResponse.json(
         { error: 'Package not found' },
@@ -30,10 +30,19 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Check auth
+  const auth = await SyncAuth.isWriteAllowed(request)
+  if (!auth.allowed) {
+    return NextResponse.json(
+      { error: auth.reason || 'Unauthorized' },
+      { status: 403 }
+    )
+  }
+
   try {
     const body = await request.json()
     const packageData = await PackageService.update(params.id, body)
-    
+
     if (!packageData) {
       return NextResponse.json(
         { error: 'Package not found' },
@@ -66,7 +75,7 @@ export async function DELETE(
 
   try {
     const success = await PackageService.delete(params.id)
-    
+
     if (!success) {
       return NextResponse.json(
         { error: 'Package not found' },
