@@ -1,7 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { PlatformInitializer } from '@/services/platformInitializer'
+import { SyncAuth } from '@/lib/sync/auth'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Check auth
+  const auth = await SyncAuth.isWriteAllowed(request)
+  if (!auth.allowed) {
+    return NextResponse.json(
+      { error: auth.reason || 'Unauthorized' },
+      { status: 403 }
+    )
+  }
+
   try {
     await PlatformInitializer.initializePlatforms()
     return NextResponse.json({ 

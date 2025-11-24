@@ -56,6 +56,43 @@ export class SyncAuth {
   }
 
   /**
+   * Check if write operations (create/update/delete) are allowed
+   * ALWAYS requires authentication (secret key or localhost), ignoring SYNC_SERVER_ONLY
+   */
+  static async isWriteAllowed(request: NextRequest): Promise<{ allowed: boolean; reason?: string }> {
+    // Always enforce auth for writes
+    const secretKey = request.headers.get('x-sync-secret')
+    
+    // Check localhost
+    const clientIP = request.headers.get('x-forwarded-for') || 
+                    request.headers.get('x-real-ip') || 
+                    'unknown'
+    
+    const allowedIPs = ['127.0.0.1', 'localhost', '::1']
+    const isLocalRequest = allowedIPs.includes(clientIP.split(',')[0].trim())
+
+    if (isLocalRequest) {
+        return { allowed: true }
+    }
+
+    if (!this.SYNC_SECRET) {
+      return { 
+        allowed: false, 
+        reason: 'Secret key not configured on server' 
+      }
+    }
+
+    if (secretKey === this.SYNC_SECRET) {
+        return { allowed: true }
+    }
+
+    return { 
+        allowed: false, 
+        reason: 'Write operations require authentication' 
+    }
+  }
+
+  /**
    * Get automatic sync frequency in days
    */
   static getAutoSyncDays(): number {

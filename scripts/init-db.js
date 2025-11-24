@@ -4,6 +4,26 @@ const { Pool } = require('pg')
 const fs = require('fs')
 const path = require('path')
 
+// Load .env manually
+try {
+  const envPath = path.join(__dirname, '..', '.env')
+  if (fs.existsSync(envPath)) {
+    const envConfig = fs.readFileSync(envPath, 'utf8')
+    envConfig.split('\n').forEach(line => {
+      const match = line.match(/^([^=]+)=(.*)$/)
+      if (match) {
+        const key = match[1].trim()
+        const value = match[2].trim().replace(/^["']|["']$/g, '') // remove quotes
+        if (!process.env[key]) {
+          process.env[key] = value
+        }
+      }
+    })
+  }
+} catch (e) {
+  console.error('Error loading .env', e)
+}
+
 const DB_HOST = process.env.DB_HOST || 'localhost'
 const DB_PORT = parseInt(process.env.DB_PORT || '5432', 10)
 const DB_USER = process.env.DB_USER || 'postgres'

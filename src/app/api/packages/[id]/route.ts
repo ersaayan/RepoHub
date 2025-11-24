@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PackageService } from '@/services/packageService'
+import { SyncAuth } from '@/lib/sync/auth'
 
 export async function GET(
   request: NextRequest,
@@ -54,6 +55,15 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Check auth
+  const auth = await SyncAuth.isWriteAllowed(request)
+  if (!auth.allowed) {
+    return NextResponse.json(
+      { error: auth.reason || 'Unauthorized' },
+      { status: 403 }
+    )
+  }
+
   try {
     const success = await PackageService.delete(params.id)
     

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PackageService } from '@/services/packageService'
+import { SyncAuth } from '@/lib/sync/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,6 +41,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Check auth
+  const auth = await SyncAuth.isWriteAllowed(request)
+  if (!auth.allowed) {
+    return NextResponse.json(
+      { error: auth.reason || 'Unauthorized' },
+      { status: 403 }
+    )
+  }
+
   try {
     const body = await request.json()
     const packageData = await PackageService.create(body)
