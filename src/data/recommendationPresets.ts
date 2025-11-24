@@ -24,8 +24,7 @@ export const PACKAGE_PRESETS: Record<PlatformId, Record<UserCategory, string[]>>
       "WinMerge.WinMerge",
       "EclipseFoundation.Eclipse",
       "Anysphere.Cursor",
-      "Microsoft.VisualStudio.2022.Community
-
+      "Microsoft.VisualStudio.2022.Community"
     ],
     "design": [
       "GIMP.GIMP",
@@ -157,7 +156,6 @@ export const PACKAGE_PRESETS: Record<PlatformId, Record<UserCategory, string[]>>
       "steam",
       "discord",
       "epic-games"
-      
     ],
     "productivity": [
       "notion",
@@ -761,7 +759,7 @@ export function getPresetIcon(name: string): string | undefined {
   if (PACKAGE_ICONS[name]) {
     return PACKAGE_ICONS[name];
   }
-  
+
   // Try case insensitive
   const lowerName = name.toLowerCase();
   const key = Object.keys(PACKAGE_ICONS).find(k => k.toLowerCase() === lowerName);
@@ -777,7 +775,7 @@ export function getPresetDetails(name: string): { description: string } {
   if (PRESET_DESCRIPTIONS[name]) {
     return { description: PRESET_DESCRIPTIONS[name] };
   }
-  
+
   // Try case insensitive
   const lowerName = name.toLowerCase();
   const key = Object.keys(PRESET_DESCRIPTIONS).find(k => k.toLowerCase() === lowerName);
