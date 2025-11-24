@@ -14,10 +14,19 @@ export const maxDuration = 1800 // 30 minutes timeout for auto sync
 let lastAutoSync: Date | null = null
 
 export async function POST(request: NextRequest) {
+  // Check auth - require sync secret or localhost
+  const authResult = await SyncAuth.isSyncAllowed(request)
+  if (!authResult.allowed) {
+    return NextResponse.json(
+      { error: 'Sync operation not allowed', reason: authResult.reason },
+      { status: 403 }
+    )
+  }
+
   try {
     // Check if auto sync is enabled
     if (!SyncAuth.isAutoSyncEnabled()) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: 'Auto sync is disabled',
         next_sync: null
       })
@@ -26,9 +35,9 @@ export async function POST(request: NextRequest) {
     // Check if enough time has passed since last sync
     const now = new Date()
     const nextSyncTime = SyncAuth.getNextSyncTime(lastAutoSync || undefined)
-    
+
     if (now < nextSyncTime) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: 'Auto sync not due yet',
         last_sync: lastAutoSync?.toISOString(),
         next_sync: nextSyncTime.toISOString(),
@@ -37,10 +46,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔄 Starting automatic package sync...')
-    
+
     // Sync all platforms in sequence
     const syncResults = []
-    
+
     try {
       // Sync Debian/Ubuntu packages
       console.log('Syncing Debian/Ubuntu packages...')
@@ -102,12 +111,12 @@ export async function POST(request: NextRequest) {
     // Update last sync time
     lastAutoSync = now
     const nextSync = SyncAuth.getNextSyncTime(lastAutoSync)
-    
+
     const successCount = syncResults.filter(r => r.status === 'success').length
     const totalCount = syncResults.length
-    
+
     console.log(`✅ Auto sync completed: ${successCount}/${totalCount} platforms synced successfully`)
-    
+
     return NextResponse.json({
       message: 'Auto sync completed',
       timestamp: now.toISOString(),
@@ -124,8 +133,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Auto sync failed:', error)
     return NextResponse.json(
-      { 
-        error: 'Auto sync failed', 
+      {
+        error: 'Auto sync failed',
         details: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       },
@@ -137,7 +146,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   const now = new Date()
   const nextSyncTime = SyncAuth.getNextSyncTime(lastAutoSync || undefined)
-  
+
   return NextResponse.json({
     auto_sync_enabled: SyncAuth.isAutoSyncEnabled(),
     auto_sync_days: SyncAuth.getAutoSyncDays(),

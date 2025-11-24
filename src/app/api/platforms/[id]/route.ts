@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const platform = await PlatformService.getById(params.id)
-    
+
     if (!platform) {
       return NextResponse.json(
         { error: 'Platform not found' },
@@ -25,14 +25,25 @@ export async function GET(
   }
 }
 
+import { SyncAuth } from '@/lib/sync/auth'
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Check auth
+  const auth = await SyncAuth.isWriteAllowed(request)
+  if (!auth.allowed) {
+    return NextResponse.json(
+      { error: auth.reason || 'Unauthorized' },
+      { status: 403 }
+    )
+  }
+
   try {
     const body = await request.json()
     const platform = await PlatformService.update(params.id, body)
-    
+
     if (!platform) {
       return NextResponse.json(
         { error: 'Platform not found' },
@@ -54,9 +65,18 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Check auth
+  const auth = await SyncAuth.isWriteAllowed(request)
+  if (!auth.allowed) {
+    return NextResponse.json(
+      { error: auth.reason || 'Unauthorized' },
+      { status: 403 }
+    )
+  }
+
   try {
     const success = await PlatformService.delete(params.id)
-    
+
     if (!success) {
       return NextResponse.json(
         { error: 'Platform not found' },
