@@ -6,7 +6,7 @@ import {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL &&
-  process.env.NEXT_PUBLIC_API_URL.trim() !== ""
+    process.env.NEXT_PUBLIC_API_URL.trim() !== ""
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
     : "/api";
 
@@ -47,7 +47,8 @@ class ApiClient {
 
   // Package operations
   async getPackages(
-    filters: FilterOptions = {}
+    filters: FilterOptions = {},
+    signal?: AbortSignal
   ): Promise<{ packages: Package[]; total: number }> {
     const params = new URLSearchParams();
 
@@ -64,7 +65,8 @@ class ApiClient {
 
     const query = params.toString() ? `?${params.toString()}` : "";
     return this.request<{ packages: Package[]; total: number }>(
-      `/packages${query}`
+      `/packages${query}`,
+      { signal }
     );
   }
 

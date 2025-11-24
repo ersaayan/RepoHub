@@ -17,11 +17,11 @@ interface PackageBrowserProps {
   onFiltersChange: (filters: FilterOptions) => void
 }
 
-export function PackageBrowserV2({ 
-  selectedPlatform, 
-  selectedPackages, 
+export function PackageBrowserV2({
+  selectedPlatform,
+  selectedPackages,
   onPackageToggle,
-  onFiltersChange 
+  onFiltersChange
 }: PackageBrowserProps) {
   const { t } = useLocale()
   const [packages, setPackages] = useState<Package[]>([])
@@ -42,6 +42,8 @@ export function PackageBrowserV2({
 
   // Load packages when platform changes
   useEffect(() => {
+    const controller = new AbortController()
+
     const loadPackages = async () => {
       if (!selectedPlatform) {
         setPackages([])
@@ -52,7 +54,7 @@ export function PackageBrowserV2({
       setLoading(true)
       setPackages([])
       setHasMore(true)
-      
+
       try {
         console.log('🔍 Frontend: Fetching initial packages for', selectedPlatform.id)
         const params: any = {
@@ -60,20 +62,20 @@ export function PackageBrowserV2({
           limit: 50,
           offset: 0
         }
-        
+
         if (searchQuery && searchQuery.trim()) {
           params.search = searchQuery.trim()
         }
-        
+
         if (isDebianUbuntu && typeFilter && typeFilter !== 'all') {
           params.type = typeFilter as 'gui' | 'cli'
         }
         if (isArch && repositoryFilter && repositoryFilter !== 'all') {
           params.repository = repositoryFilter as 'official' | 'aur'
         }
-        
+
         console.log('🔍 Frontend: API params:', params)
-        const result = await apiClient.getPackages(params)
+        const result = await apiClient.getPackages(params, controller.signal)
         console.log('📦 Frontend: Received initial packages:', {
           total: result.total,
           packageCount: result.packages.length,
@@ -83,47 +85,57 @@ export function PackageBrowserV2({
         setTotalCount(result.total)
         setHasMore(result.packages.length < result.total)
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('Request aborted')
+          return
+        }
         console.error('Failed to load packages:', error)
         setPackages([])
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
       }
     }
 
     loadPackages()
+
+    return () => {
+      controller.abort()
+    }
   }, [selectedPlatform, typeFilter, repositoryFilter, isDebianUbuntu, isArch])
 
   // Debounced search to prevent focus loss
   useEffect(() => {
     if (!selectedPlatform) return
-    
+
     const timeoutId = setTimeout(() => {
       const loadPackages = async () => {
         // DON'T set loading to true - it causes re-render and focus loss
         // setLoading(true) 
-        
+
         try {
           const params: any = {
             platform_id: selectedPlatform.id,
             limit: 50,
             offset: 0
           }
-          
+
           if (searchQuery && searchQuery.trim()) {
             params.search = searchQuery.trim()
           }
-          
+
           if (isDebianUbuntu && typeFilter && typeFilter !== 'all') {
             params.type = typeFilter as 'gui' | 'cli'
           }
           if (isArch && repositoryFilter && repositoryFilter !== 'all') {
             params.repository = repositoryFilter as 'official' | 'aur'
           }
-          
+
           console.log('🔍 Frontend: Debounced API params:', params)
           const result = await apiClient.getPackages(params)
           console.log('📦 Frontend: Debounced result:', result.packages.length)
-          
+
           // Update packages without triggering loading state
           setPackages(result.packages)
           setTotalCount(result.total)
@@ -143,7 +155,7 @@ export function PackageBrowserV2({
   // Load more packages
   const loadMore = async () => {
     if (!selectedPlatform || loadingMore || !hasMore) return
-    
+
     setLoadingMore(true)
     try {
       const params: any = {
@@ -151,18 +163,18 @@ export function PackageBrowserV2({
         limit: 50,
         offset: packages.length
       }
-      
+
       if (searchQuery && searchQuery.trim()) {
         params.search = searchQuery.trim()
       }
-      
+
       if (isDebianUbuntu && typeFilter && typeFilter !== 'all') {
         params.type = typeFilter as 'gui' | 'cli'
       }
       if (isArch && repositoryFilter && repositoryFilter !== 'all') {
         params.repository = repositoryFilter as 'official' | 'aur'
       }
-      
+
       const result = await apiClient.getPackages(params)
       setPackages(prev => [...prev, ...result.packages])
       setHasMore(packages.length + result.packages.length < result.total)
@@ -256,30 +268,30 @@ export function PackageBrowserV2({
             </div>
 
             {/* Type Filter (Debian/Ubuntu only) */}
-          {isDebianUbuntu && (
-            <Select value={typeFilter || "all"} onValueChange={(value) => setTypeFilter(value === "all" ? "" : value)}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="gui">GUI</SelectItem>
-                <SelectItem value="cli">CLI</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-          {isArch && (
-            <Select value={repositoryFilter || "all"} onValueChange={(value) => setRepositoryFilter(value === "all" ? "" : value)}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Repository" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="official">Official</SelectItem>
-                <SelectItem value="aur">AUR</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+            {isDebianUbuntu && (
+              <Select value={typeFilter || "all"} onValueChange={(value) => setTypeFilter(value === "all" ? "" : value)}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="gui">GUI</SelectItem>
+                  <SelectItem value="cli">CLI</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            {isArch && (
+              <Select value={repositoryFilter || "all"} onValueChange={(value) => setRepositoryFilter(value === "all" ? "" : value)}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Repository" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="official">Official</SelectItem>
+                  <SelectItem value="aur">AUR</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Package List */}
@@ -303,11 +315,10 @@ export function PackageBrowserV2({
               packages.map((pkg) => (
                 <div
                   key={pkg.id}
-                  className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${
-                    isPackageSelected(pkg) 
-                      ? 'border-primary bg-primary/5' 
+                  className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${isPackageSelected(pkg)
+                      ? 'border-primary bg-primary/5'
                       : 'border-border hover:bg-secondary/50'
-                  }`}
+                    }`}
                   onClick={() => onPackageToggle(pkg)}
                 >
                   <Checkbox
@@ -350,7 +361,7 @@ export function PackageBrowserV2({
                 </div>
               ))
             )}
-            
+
             {/* Load More Button */}
             {hasMore && (
               <div className="text-center py-4">
